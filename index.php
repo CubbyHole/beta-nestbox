@@ -30,7 +30,7 @@ function RepEfface($dir)
 {
     $handle = opendir($dir);
     while($elem = readdir($handle))
-    //ce while vide tous les repertoire et sous rep
+    //ce while vide tous les repertoires et sous rep
     {
         if(is_dir($dir.'/'.$elem) && substr($elem, -2, 2) !== '..' && substr($elem, -1, 1) !== '.') //si c'est un repertoire
         {
