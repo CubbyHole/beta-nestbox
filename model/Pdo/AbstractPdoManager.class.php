@@ -80,7 +80,6 @@ abstract class AbstractPdoManager
         if(!isset(self::$instance))
         {
             $class = __CLASS__;
-            var_dump($class); exit();
             self::$instance = new $class;
         }
         return self::$instance;
