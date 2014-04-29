@@ -135,14 +135,14 @@ function list_dir($base, $cur, $level = 0)
             /** on vérifie si c'est le dossier courant **/
             if ($file == $cur)
             {
-                echo "<img src=\"content/img/icon_dir_open.png\" width='18px' height='18px'/> $entry<br />\n";
+                echo "<img src=\"content/img/icon_dir_open.png\" width='18px' height='18px'/>" .utf8_decode($entry)."<br />\n";
             }
             else
             {
 
                 echo
                     "  <img src=\"content/img/icon_dir_close.png\" width='18px' height='18px' /> <a href=\"$_SERVER[PHP_SELF]?dir=" .
-                    $file . "\">".$entry."</a><br />\n";
+                    $file . "\">".utf8_decode($entry)."</a><br />\n";
             }
 
             /** récursivité pour lister les sous-dossiers **/
@@ -219,7 +219,7 @@ function list_file($cur)
 
         foreach ($tab_dir as $elem)
         {
-            if(is_empty_dir($elem))
+            if(repertoire_vide($elem))
             {
                 echo "vide";
             }
@@ -229,7 +229,7 @@ function list_file($cur)
             }
             $entry = $elem['name'];
             echo '<tr><td><img src="content/img/icon_dir_not_empty.png" width="18px" height="18px" /><a href="'.$_SERVER[PHP_SELF] .'?dir=' .
-                $current . '/'. $entry .'">'. $entry.'</a></td>';
+                $current . '/'. $entry .'">'. utf8_decode($entry).'</a></td>';
             echo '<td> </td>
                       <td> </td><td>  </td>
                       <td>' . date("d/m/Y H:i:s", $elem['date']) . '</td><td> </td>
@@ -245,7 +245,7 @@ function list_file($cur)
         {
             if(assocExt($elem['ext']) == "inconnu")
                 $elem['ext'] = "txt";
-            echo '<tr><td><img src="content/img/' . imageExt($elem['ext']) . '" width="18px" height="18px" /> ' . $elem['name'] .
+            echo '<tr><td><img src="content/img/' . imageExt($elem['ext']) . '" width="18px" height="18px" /> ' . utf8_decode($elem['name']) .
                 '</td><td> </td>
                   <td align="right">' . formatSize($elem['size']) . '</td><td> </td>
                   <td>' . date("d/m/Y H:i:s", $elem['date']) . '</td><td>  </td>
@@ -266,23 +266,35 @@ function list_file($cur)
 }
 
 // contenu du répertoire
-function is_empty_dir($dir)
+function repertoire_vide($repertoire) {
+    $contenu_rep="";
+ if (is_dir($repertoire))
 {
-    if (is_dir($dir))
+    $handle=opendir($repertoire);
+
+    while ((gettype($name=readdir($handle))!="boolean"))
     {
-        if ($Pointeur = opendir($dir))
-        {
-            while (($file = readdir($Pointeur)) !== false)
-            {
-                if ($file!="." && $file!=".." ) $OK=0;
-                if ($file=="." || $file==".." ) $OK=1;
-            }
-            closedir($Pointeur);
-        }
+        $name_array[]=$name;
     }
-    if( $OK==99) echo ("Le répertoire n'existe pas");
-    if( $OK==1) echo ("Le répertoire existe et est vide");
-    if( $OK==0) echo ("Le répertoire n'est pas vide");
+ foreach($name_array as $temp)
+     $contenu_rep.=$temp;
+
+    if ($contenu_rep=="...")
+    {
+        closedir($handle);
+
+    return true;
+    }
+    else
+    {
+     closedir($handle);
+     return false;
+    }
+    closedir($handle);
+} else {
+     return true;
+    // Le répertoire n'existe pas
+}
 }
 
 /* formatage de la taille */
