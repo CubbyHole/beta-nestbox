@@ -161,7 +161,17 @@ function list_dir($base, $cur, $level = 0)
 function list_file($cur)
 {
     $current = utf8_decode($cur);
-
+   /*$direct = $cur."/test";
+    echo $direct;
+    if(is_dir_empty($direct))
+    {
+        echo "the folder is empty";
+    }
+    else
+    {
+        echo "the folder is not empty";
+    }
+*/
     global $order, $asc, $order0;
     if ($dir = opendir($current))
     {
@@ -219,17 +229,21 @@ function list_file($cur)
 
         foreach ($tab_dir as $elem)
         {
-            if(repertoire_vide($elem))
+            $entry = $elem['name'];
+
+            $dir_cur = $cur.'/'.$entry;
+            //echo $cur.'/'.$elem['name'];
+            if(is_dir_empty($dir_cur))
             {
-                echo "vide";
+                echo '<tr><td><img src="content/img/icon_dir_empty.png" width="18px" height="18px" /><a href="'.$_SERVER[PHP_SELF] .'?dir=' .
+                    $current . '/'. $entry .'">'. utf8_decode($entry).'</a></td>';
             }
             else
             {
-                echo "pas vide";
+                echo '<tr><td><img src="content/img/icon_dir_not_empty.png" width="18px" height="18px" /><a href="'.$_SERVER[PHP_SELF] .'?dir=' .
+                    $current . '/'. $entry .'">'. utf8_decode($entry).'</a></td>';
             }
-            $entry = $elem['name'];
-            echo '<tr><td><img src="content/img/icon_dir_not_empty.png" width="18px" height="18px" /><a href="'.$_SERVER[PHP_SELF] .'?dir=' .
-                $current . '/'. $entry .'">'. utf8_decode($entry).'</a></td>';
+
             echo '<td> </td>
                       <td> </td><td>  </td>
                       <td>' . date("d/m/Y H:i:s", $elem['date']) . '</td><td> </td>
@@ -266,37 +280,16 @@ function list_file($cur)
 }
 
 // contenu du répertoire
-function repertoire_vide($repertoire) {
-    $contenu_rep="";
- if (is_dir($repertoire))
-{
-    $handle=opendir($repertoire);
-
-    while ((gettype($name=readdir($handle))!="boolean"))
-    {
-        $name_array[]=$name;
+function is_dir_empty($dir) {
+    if (!is_readable($dir)) return NULL;
+    $handle = opendir($dir);
+    while (false !== ($entry = readdir($handle))) {
+        if ($entry != "." && $entry != "..") {
+            return FALSE;
+        }
     }
- foreach($name_array as $temp)
-     $contenu_rep.=$temp;
-
-    if ($contenu_rep=="...")
-    {
-        closedir($handle);
-
-    return true;
-    }
-    else
-    {
-     closedir($handle);
-     return false;
-    }
-    closedir($handle);
-} else {
-     return true;
-    // Le répertoire n'existe pas
+    return TRUE;
 }
-}
-
 /* formatage de la taille */
 function formatSize($s)
 {
