@@ -7,7 +7,7 @@
  */
 
 /** @var string $projectRoot chemin du projet dans le système de fichier */
-$projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Cubbyhole';
+$projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Nestbox';
 
 require_once $projectRoot.'/required.php';
 
@@ -127,7 +127,7 @@ class ElementPdoManager extends AbstractPdoManager implements ElementManagerInte
 
         $result = parent::__findOne('element', $criteria, $fieldsToReturn);
 
-        if(!(is_array($result)) && !(array_key_exists('error', $result)))
+        if(is_array($result) && !(array_key_exists('error', $result)))
         {
             if(empty($fieldsToReturn))
                 $result = new Element($result);
@@ -374,5 +374,138 @@ class ElementPdoManager extends AbstractPdoManager implements ElementManagerInte
         $result = parent::__remove('element', $criteria, $options);
 
         return $result;
+    }
+
+    /**
+     * - Distingue deux cas: récupération des éléments d'un utilisateur et récupération des éléments partagés avec un utilisateur
+     * - Dans le 1er cas (isOwner = 1), on retourne les infos de l'élément et du refElement
+     * - Dans le second cas (isOwner = 0), on retourne le droit, le refRight, l'élément, le refElement et le propriétaire
+     * - Gestion des erreurs
+     * @author Alban Truc
+     * @param string|MongoId $idUser
+     * @param string $isOwner
+     * @since 01/05/2014
+     * @return Element[]
+     */
+
+    public function returnElementsDetails($idUser, $isOwner)
+    {
+        if($isOwner == '1')
+        {
+            $criteria = array(
+                'state' => (int)1,
+                'idOwner' => new MongoId($idUser)
+            );
+
+            $elements = self::find($criteria);
+
+            if(is_array($elements) && !(array_key_exists('error', $elements)))
+            {
+                //récupération des refElement pour chaque élément
+                foreach($elements as $key => $element)
+                {
+                    $refElement = $this->refElementPdoManager->findById($element->getRefElement());
+
+                    if($refElement instanceof RefElement)
+                    {
+                        $element->setRefElement($refElement);
+                        $elements[$key] = $element;
+                    }
+                    else unset($elements[$key]);
+                }
+
+                if(empty($elements))
+                    return array('error' => 'No match found.');
+            }
+
+            return $elements;
+        }
+        else if($isOwner == '0')
+        {
+            return self::returnSharedElementsDetails($idUser);
+        }
+        else return array('error' => 'Parameter isOwner must be 0 or 1');
+    }
+
+    /**
+     * Retourne le droit, le refRight, l'élément et le refElement
+     * @author Alban Truc
+     * @param string|MongoId $idUser
+     * @since 01/05/2014
+     * @return Right[]
+     */
+
+    public function returnSharedElementsDetails($idUser)
+    {
+        $criteria = array(
+            'state' => (int)1,
+            'idUser' => new MongoId($idUser)
+        );
+
+        //récupération des droits sur les éléments
+        $rightPdoManager = new RightPdoManager();
+        $rights = $rightPdoManager->find($criteria);
+
+        $refRightPdoManager = new RefRightPdoManager();
+
+        //pour chaque droit
+        if(is_array($rights) && !(array_key_exists('error', $rights)))
+        {
+            foreach($rights as $key => $right)
+            {
+                $owner = NULL;
+                $refRight = NULL;
+
+                //Récupération de l'élément. On enlève le droit de la liste si l'élément n'est pas disponible
+                $elementCriteria = array(
+                    '_id' => new MongoId($right->getElement()),
+                    'state' => (int)1
+                );
+
+                $element = self::findOne($elementCriteria);
+
+                if($element instanceof Element)
+                {
+                    //récupération du refElement. On enlève le droit de la liste si le refElement n'est pas trouvé
+                    $refElement = $this->refElementPdoManager->findById($element->getRefElement());
+
+                    if($refElement instanceof RefElement)
+                    {
+                        $element->setRefElement($refElement);
+                        $right->setElement($element);
+                    }
+                    else
+                    {
+                        unset($rights[$key]);
+                        continue;
+                    }
+                }
+                else
+                {
+                    unset($rights[$key]);
+                    continue;
+                }
+
+                //Récupération du refRight. S'il n'existe pas on enlève ce droit de la liste.
+                $refRight = $refRightPdoManager->findById($right->getRefRight());
+
+                if($refRight instanceof RefRight)
+                {
+                    $right->setRefRight($refRight);
+                }
+                else
+                {
+                    unset($rights[$key]);
+                    continue;
+                }
+
+                $rights[$key] = $right;
+            }
+
+            if(empty($rights))
+                return array('error' => 'No match found.');
+        }
+
+        return $rights;
     }
 }
