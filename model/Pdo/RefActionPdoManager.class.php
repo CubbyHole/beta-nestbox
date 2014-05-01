@@ -7,7 +7,7 @@
  */
 
 /** @var string $projectRoot chemin du projet dans le système de fichier */
-$projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Cubbyhole';
+$projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Nestbox';
 
 require_once 'AbstractPdoManager.class.php';
 require_once $projectRoot.'/model/Classes/RefAction.class.php';

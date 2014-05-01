@@ -1,5 +1,5 @@
 <?php
-$projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Cubbyhole';
+$projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Nestbox';
 
 require_once $projectRoot.'/model/classes/User.class.php';
 require_once $projectRoot.'/model/classes/RefPlan.class.php';

@@ -7,7 +7,7 @@
  */
 
 /** @var string $projectRoot chemin du projet dans le système de fichier */
-$projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Cubbyhole';
+$projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Nestbox';
 
 require_once $projectRoot.'/required.php';
 
@@ -86,7 +86,7 @@ class RefElementPdoManager extends AbstractPdoManager implements RefElementManag
 
         $result = parent::__findOne('refelement', $criteria, $fieldsToReturn);
 
-        if(!(is_array($result)) && !(array_key_exists('error', $result)))
+        if(is_array($result) && !(array_key_exists('error', $result)))
         {
             if(empty($fieldsToReturn))
                 $result = new RefElement($result);
