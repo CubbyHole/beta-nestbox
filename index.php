@@ -30,7 +30,7 @@ function RepEfface($dir)
 {
     $handle = opendir($dir);
     while($elem = readdir($handle))
-    //ce while vide tous les repertoire et sous rep
+    //ce while vide tous les repertoires et sous rep
     {
         if(is_dir($dir.'/'.$elem) && substr($elem, -2, 2) !== '..' && substr($elem, -1, 1) !== '.') //si c'est un repertoire
         {
@@ -135,14 +135,14 @@ function list_dir($base, $cur, $level = 0)
             /** on vérifie si c'est le dossier courant **/
             if ($file == $cur)
             {
-                echo "<img src=\"content/img/iconDirOpen.png\" width='18px' height='18px'/> $entry<br />\n";
+                echo "<img src=\"content/img/icon_dir_open.png\" width='18px' height='18px'/>" .utf8_decode($entry)."<br />\n";
             }
             else
             {
 
                 echo
-                    "  <img src=\"content/img/iconDirClose.png\" width='18px' height='18px' /> <a href=\"$_SERVER[PHP_SELF]?dir=" .
-                    $file . "\">".$entry."</a><br />\n";
+                    "  <img src=\"content/img/icon_dir_close.png\" width='18px' height='18px' /> <a href=\"$_SERVER[PHP_SELF]?dir=" .
+                    $file . "\">".utf8_decode($entry)."</a><br />\n";
             }
 
             /** récursivité pour lister les sous-dossiers **/
@@ -161,7 +161,17 @@ function list_dir($base, $cur, $level = 0)
 function list_file($cur)
 {
     $current = utf8_decode($cur);
-
+   /*$direct = $cur."/test";
+    echo $direct;
+    if(is_dir_empty($direct))
+    {
+        echo "the folder is empty";
+    }
+    else
+    {
+        echo "the folder is not empty";
+    }
+*/
     global $order, $asc, $order0;
     if ($dir = opendir($current))
     {
@@ -219,17 +229,21 @@ function list_file($cur)
 
         foreach ($tab_dir as $elem)
         {
-            if(is_empty_dir($elem))
+            $entry = $elem['name'];
+
+            $dir_cur = $cur.'/'.$entry;
+            //echo $cur.'/'.$elem['name'];
+            if(is_dir_empty($dir_cur))
             {
-                echo "vide";
+                echo '<tr><td><img src="content/img/icon_dir_empty.png" width="18px" height="18px" /><a href="'.$_SERVER[PHP_SELF] .'?dir=' .
+                    $current . '/'. $entry .'">'. utf8_decode($entry).'</a></td>';
             }
             else
             {
-                echo "pas vide";
+                echo '<tr><td><img src="content/img/icon_dir_not_empty.png" width="18px" height="18px" /><a href="'.$_SERVER[PHP_SELF] .'?dir=' .
+                    $current . '/'. $entry .'">'. utf8_decode($entry).'</a></td>';
             }
-            $entry = $elem['name'];
-            echo '<tr><td><img src="content/img/iconDirNotEmpty.png" width="18px" height="18px" /><a href="'.$_SERVER[PHP_SELF] .'?dir=' .
-                $current . '/'. $entry .'">'. $entry.'</a></td>';
+
             echo '<td> </td>
                       <td> </td><td>  </td>
                       <td>' . date("d/m/Y H:i:s", $elem['date']) . '</td><td> </td>
@@ -245,7 +259,7 @@ function list_file($cur)
         {
             if(assocExt($elem['ext']) == "inconnu")
                 $elem['ext'] = "txt";
-            echo '<tr><td><img src="content/img/' . imageExt($elem['ext']) . '" width="18px" height="18px" /> ' . $elem['name'] .
+            echo '<tr><td><img src="content/img/' . imageExt($elem['ext']) . '" width="18px" height="18px" /> ' . utf8_decode($elem['name']) .
                 '</td><td> </td>
                   <td align="right">' . formatSize($elem['size']) . '</td><td> </td>
                   <td>' . date("d/m/Y H:i:s", $elem['date']) . '</td><td>  </td>
@@ -266,25 +280,16 @@ function list_file($cur)
 }
 
 // contenu du répertoire
-function is_empty_dir($dir)
-{
-    if (is_dir($dir))
-    {
-        if ($Pointeur = opendir($dir))
-        {
-            while (($file = readdir($Pointeur)) !== false)
-            {
-                if ($file!="." && $file!=".." ) $OK=0;
-                if ($file=="." || $file==".." ) $OK=1;
-            }
-            closedir($Pointeur);
+function is_dir_empty($dir) {
+    if (!is_readable($dir)) return NULL;
+    $handle = opendir($dir);
+    while (false !== ($entry = readdir($handle))) {
+        if ($entry != "." && $entry != "..") {
+            return FALSE;
         }
     }
-    if( $OK==99) echo ("Le répertoire n'existe pas");
-    if( $OK==1) echo ("Le répertoire existe et est vide");
-    if( $OK==0) echo ("Le répertoire n'est pas vide");
+    return TRUE;
 }
-
 /* formatage de la taille */
 function formatSize($s)
 {
@@ -332,23 +337,23 @@ function assocType($type)
 function imageExt($ext)
 {
     $i = array(
-        '' => "iconUnknow.png",
+        '' => "icon_unknow.png",
 
-        'sh' => "iconScriptX.png",
-        'bsh' => "iconScriptX.png",
-        'mak' => "iconScriptX.png",
-        'cmake' => "iconScriptX.png",
-        'cmd' => "iconScriptX.png",
-        'nt' => "iconScriptX.png",
-        'bat' => "iconBat.png",
-        'exe' => "iconExe.png",
-        'ps' => "iconPs.png",
-        'py' => "iconScriptX.png",
-        'pym' => "iconScriptX.png",
-        'sql' => "iconSql.png",
-        'js' => "iconJs.png",
+        'sh' => "icon_script_x.png",
+        'bsh' => "icon_script_x.png",
+        'mak' => "icon_script_x.png",
+        'cmake' => "icon_script_x.png",
+        'cmd' => "icon_script_x.png",
+        'nt' => "icon_script_x.png",
+        'bat' => "icon_bat.png",
+        'exe' => "icon_exe.png",
+        'ps' => "icon_ps.png",
+        'py' => "icon_script_x.png",
+        'pym' => "icon_script_x.png",
+        'sql' => "icon_sql.png",
+        'js' => "icon_js.png",
 
-        'bmp','gif' => "iconWord.png",
+        'bmp','gif' => "icon_word.png",
 
     );
     if (in_array($ext, array_keys($i)))
@@ -519,12 +524,12 @@ function cmp_ext($a, $b)
             /* lien sur la racine */
             if (!$dir)
             {
-                echo "<img src=\"content/img/iconDirOpen.png\" width='18px' heigth='18px' /> Root <br />\n";
+                echo "<img src=\"content/img/icon_dir_open.png\" width='18px' heigth='18px' /> Root <br />\n";
             }
             else
             {
                 echo
-                    "<div id=\"arbo\"><img src=\"content/img/iconDirClose.png\" width='18px' heigth='18px' /> <a href=\"$_SERVER[PHP_SELF]\">Root</a></div>" .
+                    "<div id=\"arbo\"><img src=\"content/img/icon_dir_close.png\" width='18px' heigth='18px' /> <a href=\"$_SERVER[PHP_SELF]\">Root</a></div>" .
                     "\n";
             }
             list_dir($BASE,$dir, 1);
