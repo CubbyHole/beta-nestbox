@@ -31,7 +31,7 @@ class RefElementPdoManager extends AbstractPdoManager implements RefElementManag
     public function __construct()
     {
         parent::__construct();
-        $this->refElementCollection = $this->getCollection('refElement');
+        $this->refElementCollection = $this->getCollection('refelement');
     }
 
     /**
@@ -48,7 +48,7 @@ class RefElementPdoManager extends AbstractPdoManager implements RefElementManag
         if($criteria instanceof RefElement)
             $criteria = $this->dismount($criteria);
 
-        $cursor = parent::__find('refElement', $criteria, $fieldsToReturn);
+        $cursor = parent::__find('refelement', $criteria, $fieldsToReturn);
 
         if(!(is_array($cursor)) && !(array_key_exists('error', $cursor)))
         {
@@ -84,7 +84,7 @@ class RefElementPdoManager extends AbstractPdoManager implements RefElementManag
         if($criteria instanceof RefElement)
             $criteria = $this->dismount($criteria);
 
-        $result = parent::__findOne('refElement', $criteria, $fieldsToReturn);
+        $result = parent::__findOne('refelement', $criteria, $fieldsToReturn);
 
         if(!(is_array($result)) && !(array_key_exists('error', $result)))
         {
@@ -106,7 +106,7 @@ class RefElementPdoManager extends AbstractPdoManager implements RefElementManag
      */
     function findById($id, $fieldsToReturn = array())
     {
-        $result = parent::__findOne('refElement', array('_id' => new MongoId($id)));
+        $result = parent::__findOne('refelement', array('_id' => new MongoId($id)));
 
         //Si un compte est trouvé
         if (!(array_key_exists('error', $result)))
@@ -128,7 +128,7 @@ class RefElementPdoManager extends AbstractPdoManager implements RefElementManag
      */
     function findAll($fieldsToReturn = array())
     {
-        $cursor = parent::__find('refElement', array());
+        $cursor = parent::__find('refelement', array());
 
         if(!(is_array($cursor)) && !(array_key_exists('error', $cursor)))
         {
@@ -171,7 +171,7 @@ class RefElementPdoManager extends AbstractPdoManager implements RefElementManag
         if($updateCriteria instanceof RefElement)
             $updateCriteria = $this->dismount($updateCriteria);
 
-        $result = parent::__findAndModify('refElement', $searchQuery, $updateCriteria, $fieldsToReturn, $options);
+        $result = parent::__findAndModify('refelement', $searchQuery, $updateCriteria, $fieldsToReturn, $options);
 
         if($fieldsToReturn === NULL)
             $result = new RefElement($result);
@@ -194,7 +194,7 @@ class RefElementPdoManager extends AbstractPdoManager implements RefElementManag
         if($document instanceof RefElement)
             $document = $this->dismount($document);
 
-        $result = parent::__create('refElement', $document, $options);
+        $result = parent::__create('refelement', $document, $options);
 
         return $result;
     }
@@ -214,7 +214,7 @@ class RefElementPdoManager extends AbstractPdoManager implements RefElementManag
         if($criteria instanceof RefElement)
             $criteria = $this->dismount($criteria);
 
-        $result = parent::__update('refElement', $criteria, $update, $options);
+        $result = parent::__update('refelement', $criteria, $update, $options);
 
         return $result;
     }
@@ -234,7 +234,7 @@ class RefElementPdoManager extends AbstractPdoManager implements RefElementManag
         if($criteria instanceof RefElement)
             $criteria = $this->dismount($criteria);
 
-        $result = parent::__remove('refElement', $criteria, $options);
+        $result = parent::__remove('refelement', $criteria, $options);
 
         return $result;
     }

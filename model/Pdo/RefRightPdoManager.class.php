@@ -31,7 +31,7 @@ class RefRightPdoManager extends AbstractPdoManager implements RefRightManagerIn
     public function __construct()
     {
         parent::__construct();
-        $this->refRightCollection = $this->getCollection('refRight');
+        $this->refRightCollection = $this->getCollection('refright');
     }
 
     /**
@@ -48,7 +48,7 @@ class RefRightPdoManager extends AbstractPdoManager implements RefRightManagerIn
         if($criteria instanceof RefRight)
             $criteria = $this->dismount($criteria);
 
-        $cursor = parent::__find('refRight', $criteria, $fieldsToReturn);
+        $cursor = parent::__find('refright', $criteria, $fieldsToReturn);
 
         if(!(is_array($cursor)) && !(array_key_exists('error', $cursor)))
         {
@@ -84,7 +84,7 @@ class RefRightPdoManager extends AbstractPdoManager implements RefRightManagerIn
         if($criteria instanceof RefRight)
             $criteria = $this->dismount($criteria);
 
-        $result = parent::__findOne('refRight', $criteria, $fieldsToReturn);
+        $result = parent::__findOne('refright', $criteria, $fieldsToReturn);
 
         if(!(is_array($result)) && !(array_key_exists('error', $result)))
         {
@@ -106,7 +106,7 @@ class RefRightPdoManager extends AbstractPdoManager implements RefRightManagerIn
      */
     function findById($id, $fieldsToReturn = array())
     {
-        $result = parent::__findOne('refRight', array('_id' => new MongoId($id)));
+        $result = parent::__findOne('refright', array('_id' => new MongoId($id)));
 
         //Si un compte est trouvé
         if (!(array_key_exists('error', $result)))
@@ -128,7 +128,7 @@ class RefRightPdoManager extends AbstractPdoManager implements RefRightManagerIn
      */
     function findAll($fieldsToReturn = array())
     {
-        $cursor = parent::__find('refRight', array());
+        $cursor = parent::__find('refright', array());
 
         if(!(is_array($cursor)) && !(array_key_exists('error', $cursor)))
         {
@@ -171,7 +171,7 @@ class RefRightPdoManager extends AbstractPdoManager implements RefRightManagerIn
         if($updateCriteria instanceof RefRight)
             $updateCriteria = $this->dismount($updateCriteria);
 
-        $result = parent::__findAndModify('refRight', $searchQuery, $updateCriteria, $fieldsToReturn, $options);
+        $result = parent::__findAndModify('refright', $searchQuery, $updateCriteria, $fieldsToReturn, $options);
 
         if($fieldsToReturn === NULL)
             $result = new RefRight($result);
@@ -194,7 +194,7 @@ class RefRightPdoManager extends AbstractPdoManager implements RefRightManagerIn
         if($document instanceof RefRight)
             $document = $this->dismount($document);
 
-        $result = parent::__create('refRight', $document, $options);
+        $result = parent::__create('refright', $document, $options);
 
         return $result;
     }
@@ -214,7 +214,7 @@ class RefRightPdoManager extends AbstractPdoManager implements RefRightManagerIn
         if($criteria instanceof RefRight)
             $criteria = $this->dismount($criteria);
 
-        $result = parent::__update('refRight', $criteria, $update, $options);
+        $result = parent::__update('refright', $criteria, $update, $options);
 
         return $result;
     }
@@ -234,7 +234,7 @@ class RefRightPdoManager extends AbstractPdoManager implements RefRightManagerIn
         if($criteria instanceof RefRight)
             $criteria = $this->dismount($criteria);
 
-        $result = parent::__remove('refRight', $criteria, $options);
+        $result = parent::__remove('refright', $criteria, $options);
 
         return $result;
     }
