@@ -24,6 +24,8 @@ class Element
      */
     private $state;
 
+    private $name;
+
     /** @var  User|string|MongoId $idOwner identifiant de l'utilisateur propriétaire de l'élément */
     private $idOwner;
 
@@ -55,19 +57,21 @@ class Element
                 $array = func_get_arg(0);
                 $this->_id = (array_key_exists('_id', $array)) ? $array['_id'] : NULL;
                 $this->state = (array_key_exists('state', $array)) ? (int)$array['state'] : NULL;
+                $this->name = (array_key_exists('name', $array)) ? (string)$array['name'] : NULL;
                 $this->idOwner = (array_key_exists('idOwner', $array)) ? $array['idOwner'] : NULL;
                 $this->idRefElement = (array_key_exists('idRefElement', $array)) ? $array['idRefElement'] : NULL;
                 $this->serverPath = (array_key_exists('serverPath', $array)) ? (string)$array['serverPath'] : NULL;
                 $this->hash = (array_key_exists('hash', $array)) ? (string)$array['hash'] : NULL;
                 $this->downloadLink = (array_key_exists('downloadLink', $array)) ? (string)$array['downloadLink'] : NULL;
                 break;
-            case 6: //toutes les propriétés sont passées dans la fonction, non sous la forme d'un tableau
+            case 7: //toutes les propriétés sont passées dans la fonction, non sous la forme d'un tableau
                 $this->state = (int)func_get_arg(0);
-                $this->idOwner = func_get_arg(1);
-                $this->idRefElement = func_get_arg(2);
-                $this->serverPath = (string)func_get_arg(3);
-                $this->hash = (string)func_get_arg(4);
-                $this->downloadLink = (string)func_get_arg(5);
+                $this->name = (string)func_get_arg(1);
+                $this->idOwner = func_get_arg(2);
+                $this->idRefElement = func_get_arg(3);
+                $this->serverPath = (string)func_get_arg(4);
+                $this->hash = (string)func_get_arg(5);
+                $this->downloadLink = (string)func_get_arg(6);
                 break;
         }
     }
@@ -102,6 +106,22 @@ class Element
     public function getState()
     {
         return (int)$this->state;
+    }
+
+    /**
+     * @param string $name
+     */
+    public function setName($name)
+    {
+        $this->$name = (string)$name;
+    }
+
+    /**
+     * @return string
+     */
+    public function getName()
+    {
+        return (string)$this->$name;
     }
 
     /**
