@@ -121,7 +121,7 @@ class Element
      */
     public function getName()
     {
-        return (string)$this->$name;
+        return (string)$this->name;
     }
 
     /**
