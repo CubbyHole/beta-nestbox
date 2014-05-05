@@ -32,6 +32,9 @@ class Element
     /** @var RefElement|string|MongoId $idRefElement identifiant du refElement */
     private $idRefElement;
 
+    /** @var int $size taille du fichier en Kb */
+    private $size;
+
     /** @var string $serverPath chemin de l'élément sur les serveurs de stockage */
     private $serverPath;
 
@@ -60,18 +63,20 @@ class Element
                 $this->name = (array_key_exists('name', $array)) ? (string)$array['name'] : NULL;
                 $this->idOwner = (array_key_exists('idOwner', $array)) ? $array['idOwner'] : NULL;
                 $this->idRefElement = (array_key_exists('idRefElement', $array)) ? $array['idRefElement'] : NULL;
+                $this->size = (array_key_exists('size', $array)) ? (int)$array['size'] : NULL;
                 $this->serverPath = (array_key_exists('serverPath', $array)) ? (string)$array['serverPath'] : NULL;
                 $this->hash = (array_key_exists('hash', $array)) ? (string)$array['hash'] : NULL;
                 $this->downloadLink = (array_key_exists('downloadLink', $array)) ? (string)$array['downloadLink'] : NULL;
                 break;
-            case 7: //toutes les propriétés sont passées dans la fonction, non sous la forme d'un tableau
+            case 8: //toutes les propriétés sont passées dans la fonction, non sous la forme d'un tableau
                 $this->state = (int)func_get_arg(0);
                 $this->name = (string)func_get_arg(1);
                 $this->idOwner = func_get_arg(2);
                 $this->idRefElement = func_get_arg(3);
-                $this->serverPath = (string)func_get_arg(4);
-                $this->hash = (string)func_get_arg(5);
-                $this->downloadLink = (string)func_get_arg(6);
+                $this->size = (int)func_get_arg(4);
+                $this->serverPath = (string)func_get_arg(5);
+                $this->hash = (string)func_get_arg(6);
+                $this->downloadLink = (string)func_get_arg(7);
                 break;
         }
     }
@@ -154,6 +159,22 @@ class Element
     public function getRefElement()
     {
         return $this->idRefElement;
+    }
+
+    /**
+     * @param int $size
+     */
+    public function setSize($size)
+    {
+        $this->size = (int)$size;
+    }
+
+    /**
+     * @return int
+     */
+    public function getSize()
+    {
+        return (int)$this->size;
     }
 
     /**
