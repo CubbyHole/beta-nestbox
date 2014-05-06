@@ -24,6 +24,7 @@ class Element
      */
     private $state;
 
+    /** @var string $name nom de l'élément */
     private $name;
 
     /** @var  User|string|MongoId $idOwner identifiant de l'utilisateur propriétaire de l'élément */
