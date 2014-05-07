@@ -117,11 +117,12 @@ interface ElementManagerInterface
      * @author Alban Truc
      * @param string|MongoId $idUser
      * @param string $isOwner
+     * @param string $path emplacement sur le serveur des éléments
      * @since 01/05/2014
      * @return Element[]
      */
 
-    function returnElementsDetails($idUser, $isOwner);
+    function returnElementsDetails($idUser, $isOwner, $path = 'all');
 
     /**
      * Retourne le droit, le refRight, l'élément et le refElement

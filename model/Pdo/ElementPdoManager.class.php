@@ -384,11 +384,12 @@ class ElementPdoManager extends AbstractPdoManager implements ElementManagerInte
      * @author Alban Truc
      * @param string|MongoId $idUser
      * @param string $isOwner
+     * @param string $path emplacement sur le serveur des éléments
      * @since 01/05/2014
      * @return Element[]
      */
 
-    public function returnElementsDetails($idUser, $isOwner)
+    public function returnElementsDetails($idUser, $isOwner, $path = 'all')
     {
         if($isOwner == '1')
         {
@@ -396,6 +397,9 @@ class ElementPdoManager extends AbstractPdoManager implements ElementManagerInte
                 'state' => (int)1,
                 'idOwner' => new MongoId($idUser)
             );
+
+            if($path != 'all')
+                $criteria['serverPath'] = $path;
 
             $elements = self::find($criteria);
 
