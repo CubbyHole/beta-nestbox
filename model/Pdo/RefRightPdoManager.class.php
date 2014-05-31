@@ -86,7 +86,7 @@ class RefRightPdoManager extends AbstractPdoManager implements RefRightManagerIn
 
         $result = parent::__findOne('refright', $criteria, $fieldsToReturn);
 
-        if(!(is_array($result)) && !(array_key_exists('error', $result)))
+        if(!(array_key_exists('error', $result)))
         {
             if(empty($fieldsToReturn))
                 $result = new RefRight($result);
@@ -106,7 +106,7 @@ class RefRightPdoManager extends AbstractPdoManager implements RefRightManagerIn
      */
     function findById($id, $fieldsToReturn = array())
     {
-        $result = parent::__findOne('refright', array('_id' => new MongoId($id)));
+        $result = parent::__findOne('refright', array('_id' => new MongoId($id)), $fieldsToReturn);
 
         //Si un compte est trouvé
         if (!(array_key_exists('error', $result)))
@@ -128,7 +128,7 @@ class RefRightPdoManager extends AbstractPdoManager implements RefRightManagerIn
      */
     function findAll($fieldsToReturn = array())
     {
-        $cursor = parent::__find('refright', array());
+        $cursor = parent::__find('refright', $fieldsToReturn);
 
         if(!(is_array($cursor)) && !(array_key_exists('error', $cursor)))
         {

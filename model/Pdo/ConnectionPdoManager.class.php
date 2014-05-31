@@ -127,7 +127,7 @@ class ConnectionPdoManager extends AbstractPdoManager implements ConnectionManag
      */
     function findById($id, $fieldsToReturn = array())
     {
-        $result = parent::__findOne('connection', array('_id' => new MongoId($id)));
+        $result = parent::__findOne('connection', array('_id' => new MongoId($id)), $fieldsToReturn);
 
         //Si un compte est trouvé
         if (!(array_key_exists('error', $result)))
@@ -149,7 +149,7 @@ class ConnectionPdoManager extends AbstractPdoManager implements ConnectionManag
      */
     function findAll($fieldsToReturn = array())
     {
-        $cursor = parent::__find('connection', array());
+        $cursor = parent::__find('connection', $fieldsToReturn);
 
         if(!(is_array($cursor)) && !(array_key_exists('error', $cursor)))
         {

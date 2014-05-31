@@ -117,7 +117,7 @@ class RefActionPdoManager extends AbstractPdoManager implements RefActionManager
 
     public function findById($id, $fieldsToReturn = array())
     {
-        $result = parent::__findOne('refaction', array('_id' => new MongoId($id)));
+        $result = parent::__findOne('refaction', array('_id' => new MongoId($id)), $fieldsToReturn);
 
         if(!(array_key_exists('error', $result)))
         {
@@ -139,7 +139,7 @@ class RefActionPdoManager extends AbstractPdoManager implements RefActionManager
 
     public function findAll($fieldsToReturn = array())
     {
-        $cursor = parent::__find('refaction', array());
+        $cursor = parent::__find('refaction', $fieldsToReturn);
 
         if(!(is_array($cursor)) && !(array_key_exists('error', $cursor)))
         {

@@ -163,7 +163,7 @@ class RightPdoManager extends AbstractPdoManager implements RightManagerInterfac
      */
     function findById($id, $fieldsToReturn = array())
     {
-        $result = parent::__findOne('right', array('_id' => new MongoId($id)));
+        $result = parent::__findOne('right', array('_id' => new MongoId($id)), $fieldsToReturn);
 
         //Si un compte est trouvé
         if (!(array_key_exists('error', $result)))
@@ -185,7 +185,7 @@ class RightPdoManager extends AbstractPdoManager implements RightManagerInterfac
      */
     function findAll($fieldsToReturn = array())
     {
-        $cursor = parent::__find('right', array());
+        $cursor = parent::__find('right', $fieldsToReturn);
 
         if(!(is_array($cursor)) && !(array_key_exists('error', $cursor)))
         {
@@ -438,5 +438,42 @@ class RightPdoManager extends AbstractPdoManager implements RightManagerInterfac
         $result = parent::__remove('right', $criteria, $options);
 
         return $result;
+    }
+
+    /**
+     * Indique si l'utilisateur donné a les droits voulus sur l'élément donné
+     * @author Alban Truc
+     * @param MongoId|string $idUser
+     * @param MongoId|string $idElement
+     * @param string $refRightCode
+     * @since 15/05/2014
+     * @return bool
+     */
+
+    public function hasRightOnElement($idUser, $idElement, $refRightCode)
+    {
+        //récupérer l'id du refRight à partir du code
+        $refRightPdoManager = new RefRightPdoManager();
+
+        $refRightCriteria = array(
+            'state' => (int)1,
+            'code' => (string)$refRightCode
+        );
+
+        $refRight = $refRightPdoManager->findOne($refRightCriteria);
+
+        //récupérer le droit
+        $rightCriteria = array(
+            'state' => (int)1,
+            'idUser' => new MongoId($idUser),
+            'idElement' => new MongoId($idElement),
+            'idRefRigt' => $refRight->getId()
+        );
+
+        $right = self::find($rightCriteria);
+
+        if(!(array_key_exists('error', $right)))
+            return TRUE;
+        else return FALSE;
     }
 }

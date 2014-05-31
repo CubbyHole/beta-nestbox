@@ -177,7 +177,7 @@ class UserPdoManager extends AbstractPdoManager implements UserManagerInterface{
 
     public function findAll($fieldsToReturn = array())
     {
-        $cursor = parent::__find('user', array());
+        $cursor = parent::__find('user', $fieldsToReturn);
 
         if(!(is_array($cursor)) && !(array_key_exists('error', $cursor)))
         {
@@ -210,7 +210,7 @@ class UserPdoManager extends AbstractPdoManager implements UserManagerInterface{
 
     public function findById($id, $fieldsToReturn = array())
     {
-        $result = parent::__findOne('user', array('_id' => new MongoId($id)));
+        $result = parent::__findOne('user', array('_id' => new MongoId($id)), $fieldsToReturn);
 
         //Si un user est trouvé
         if (!(array_key_exists('error', $result)))
