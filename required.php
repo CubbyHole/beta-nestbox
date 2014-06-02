@@ -35,5 +35,8 @@ require_once $projectRoot.'/model/pdo/RefElementPdoManager.class.php';
 require_once $projectRoot.'/model/pdo/RightPdoManager.class.php';
 require_once $projectRoot.'/model/pdo/RefRightPdoManager.class.php';
 
+require_once $projectRoot.'/utils/FileSystemManager.php';
+require_once $projectRoot.'/utils/ActionManager.php';
+
 require_once $projectRoot.'/controller/functions.php';
 ?>
