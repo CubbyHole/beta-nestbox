@@ -445,35 +445,61 @@ class RightPdoManager extends AbstractPdoManager implements RightManagerInterfac
      * @author Alban Truc
      * @param MongoId|string $idUser
      * @param MongoId|string $idElement
-     * @param string $refRightCode
+     * @param array $refRightCodes
      * @since 15/05/2014
-     * @return bool
+     * @return bool|array
      */
 
-    public function hasRightOnElement($idUser, $idElement, $refRightCode)
+    public function hasRightOnElement($idUser, $idElement, $refRightCodes)
     {
-        //récupérer l'id du refRight à partir du code
-        $refRightPdoManager = new RefRightPdoManager();
+        if(is_array($refRightCodes))
+        {
+            //récupérer l'id du refRight à partir du code
+            $refRightPdoManager = new RefRightPdoManager();
 
-        $refRightCriteria = array(
-            'state' => (int)1,
-            'code' => (string)$refRightCode
-        );
+            $refRightCriteria = array('state' => (int)1);
 
-        $refRight = $refRightPdoManager->findOne($refRightCriteria);
+            //@see http://www.php.net/manual/en/function.count.php
+            if(count($refRightCodes) > 1)
+            {
+                foreach($refRightCodes as $refRightCode)
+                    $refRightCriteria['$or'][] = array('code' => $refRightCode);
+            }
+            else
+                $refRightCriteria['code'] = $refRightCodes[0];
 
-        //récupérer le droit
-        $rightCriteria = array(
-            'state' => (int)1,
-            'idUser' => new MongoId($idUser),
-            'idElement' => new MongoId($idElement),
-            'idRefRigt' => $refRight->getId()
-        );
+            //var_dump($refRightCriteria);
 
-        $right = self::find($rightCriteria);
+            $refRights = $refRightPdoManager->find($refRightCriteria);
+            //var_dump($refRights);
 
-        if(!(array_key_exists('error', $right)))
-            return TRUE;
-        else return FALSE;
+            //récupérer le droit
+            $rightCriteria = array(
+                'state' => (int)1,
+                'idUser' => new MongoId($idUser),
+                'idElement' => new MongoId($idElement)
+            );
+
+            if(count($refRights) > 1)
+            {
+                foreach($refRights as $refRight)
+                    $rightCriteria['$or'][] = array('idRefRight' => $refRight->getId());
+            }
+            else
+                $rightCriteria['idRefRight'] = $refRights[0];
+
+            //var_dump($rightCriteria);
+
+            $rights = self::find($rightCriteria);
+
+            //var_dump($rights);
+
+            if(!(array_key_exists('error', $rights)))
+                return TRUE;
+            elseif($rights['error'] == 'No match found.')
+                return FALSE;
+            else return $rights;
+        }
+        else return array('error' => 'Expected array for third parameter (refRightCodes)');
     }
 }
