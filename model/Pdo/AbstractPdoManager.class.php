@@ -36,36 +36,7 @@ abstract class AbstractPdoManager
 
     public function __construct()
     {
-        /** @var string $connectionString chaine de connexion
-         * @link http://www.php.net/manual/fr/function.sprintf.php
-         */
-        $connectionString = sprintf('mongodb://%s:%d/%s', AbstractPdoManager::DBHOST, AbstractPdoManager::DBPORT, AbstractPdoManager::DBNAME);
-
-        try
-        {
-            $this->connection = new MongoClient($connectionString);
-            $this->database = $this->connection->selectDB(AbstractPdoManager::DBNAME);
-        }
-        catch (Exception $e)
-        {
-            if($e instanceof MongoConnectionException)
-            {
-                $error = '<div class="alert alert-danger"><p>Could not reach a database.</p>
-                Please contact our technical support (technical.support@cubbyhole.com)
-                if this error remains for  more than 30 minutes.</div>';
-
-                echo $error;
-            }
-            else
-            {
-                $error = '<div class="alert alert-danger"><p>The following error occured when trying to reach a database:</p>
-                <p>'.utf8_encode($e->getMessage().' In '.$e->getFile().' at line '.$e->getLine()).'</p>
-                <p>Please contact our technical support at technical.support@cubbyhole.com if this error remains.</p></div>';
-
-                echo $error;
-            }
-            exit();
-        }
+        self::selectDatabase(self::DBNAME, self::DBPORT, self::DBHOST);
     }
 
     /**
@@ -97,6 +68,49 @@ abstract class AbstractPdoManager
     {
         return $this->database->selectCollection($name);
     }
+
+    /**
+     * Permet de sélectionner la base de données (et d'en changer)
+     * @author Alban Truc
+     * @param string $databaseName
+     * @param int $databasePort
+     * @param string $databaseHost
+     * @since 03/06/2014
+     */
+
+     public function selectDatabase($databaseName, $databasePort = 27017, $databaseHost = 'localhost')
+     {
+         /** @var string $connectionString chaine de connexion
+          * @link http://www.php.net/manual/fr/function.sprintf.php
+          */
+         $connectionString = sprintf('mongodb://%s:%d/%s', $databaseHost, $databasePort, $databaseName);
+
+         try
+         {
+             $this->connection = new MongoClient($connectionString);
+             $this->database = $this->connection->selectDB(AbstractPdoManager::DBNAME);
+         }
+         catch (Exception $e)
+         {
+             if($e instanceof MongoConnectionException)
+             {
+                 $error = '<div class="alert alert-danger"><p>Could not reach a database.</p>
+                Please contact our technical support (technical.support@cubbyhole.com)
+                if this error remains for  more than 30 minutes.</div>';
+
+                 echo $error;
+             }
+             else
+             {
+                 $error = '<div class="alert alert-danger"><p>The following error occured when trying to reach a database:</p>
+                <p>'.utf8_encode($e->getMessage().' In '.$e->getFile().' at line '.$e->getLine()).'</p>
+                <p>Please contact our technical support at technical.support@cubbyhole.com if this error remains.</p></div>';
+
+                 echo $error;
+             }
+             exit();
+         }
+     }
 
     /**
      * Chiffre une chaîne de caractères
