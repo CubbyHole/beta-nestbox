@@ -86,7 +86,7 @@ class RefRightPdoManager extends AbstractPdoManager implements RefRightManagerIn
 
         $result = parent::__findOne('refright', $criteria, $fieldsToReturn);
 
-        if(!(array_key_exists('error', $result)))
+        if((array_key_exists('error', $result)))
         {
             if(empty($fieldsToReturn))
                 $result = new RefRight($result);

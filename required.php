@@ -39,4 +39,5 @@ require_once $projectRoot.'/utils/FileSystemManager.php';
 require_once $projectRoot.'/utils/ActionManager.php';
 
 require_once $projectRoot.'/controller/functions.php';
+require_once $projectRoot.'/controller/login.php';
 ?>

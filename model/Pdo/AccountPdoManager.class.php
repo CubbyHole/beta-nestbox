@@ -37,7 +37,8 @@ class AccountPdoManager extends AbstractPdoManager implements AccountManagerInte
 
     public function __construct()
     {
-        parent::__construct();
+        parent::__construct('cubbyhole');
+//        $this->database = $this->connection->selectDB('cubbyhole');
         $this->accountCollection = $this->getCollection('account');
         /**
          * Le UserPdoManager nécessite l'AccountPdoManager qui nécessite le UserPdoManager...
@@ -185,7 +186,7 @@ class AccountPdoManager extends AbstractPdoManager implements AccountManagerInte
 
         $result = parent::__findOne('account', $criteria, $fieldsToReturn);
 
-        if(!(is_array($result)) && !(array_key_exists('error', $result)))
+        if((is_array($result)) && !(array_key_exists('error', $result)))
         {
             if(empty($fieldsToReturn))
                 $result = new Account($result);

@@ -143,7 +143,7 @@ class RightPdoManager extends AbstractPdoManager implements RightManagerInterfac
 
         $result = parent::__findOne('right', $criteria, $fieldsToReturn);
 
-        if(!(is_array($result)) && !(array_key_exists('error', $result)))
+        if((is_array($result)) && !(array_key_exists('error', $result)))
         {
             if(empty($fieldsToReturn))
                 $result = new Right($result);

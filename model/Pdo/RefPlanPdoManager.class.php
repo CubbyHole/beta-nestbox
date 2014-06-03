@@ -32,7 +32,8 @@ class RefPlanPdoManager extends AbstractPdoManager implements RefPlanManagerInte
 
 	public function __construct()
 	{
-        parent::__construct();
+        parent::__construct('cubbyhole');
+//        $this->database = $this->connection->selectDB('cubbyhole');
         $this->refPlanCollection = $this->getCollection('refplan');
 	}
 
@@ -96,7 +97,7 @@ class RefPlanPdoManager extends AbstractPdoManager implements RefPlanManagerInte
 
         $result = parent::__findOne('refplan', $criteria, $fieldsToReturn);
 
-        if(!(is_array($result)) && !(array_key_exists('error', $result)))
+        if((is_array($result)) && !(array_key_exists('error', $result)))
         {
             if(empty($fieldsToReturn))
                 $result = new RefPlan($result);

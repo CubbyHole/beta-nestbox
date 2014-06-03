@@ -41,8 +41,10 @@ class UserPdoManager extends AbstractPdoManager implements UserManagerInterface{
 
     public function __construct()
     {
-        parent::__construct();
+        parent::__construct('cubbyhole');
+//        $this->database = $this->connection->selectDB('cubbyhole');
         $this->userCollection = $this->getCollection('user');
+
 
         $numberOfArgs = func_num_args();
 
@@ -382,6 +384,80 @@ class UserPdoManager extends AbstractPdoManager implements UserManagerInterface{
         $result = parent::__remove('user', $criteria, $options);
 
         return $result;
+    }
+
+    /**
+     * Authentifier un utilisateur:
+     * - Récupère l'utilisateur inscrit avec l'e-mail indiquée. S'il y en a un:
+     *  - Vérifie le mot de passe. S'il correspond:
+     *      - Récupère son compte
+     * @author Alban Truc
+     * @param string $email
+     * @param string $password
+     * @since 02/2014
+     * @return User|array contenant le message d'erreur
+     */
+
+    public function authenticate($email, $password)
+    {
+        //Récupère l'utilisateur inscrit avec l'e-mail indiquée.
+        $query = array(
+            'state' => (int)1,
+            'email' => $email
+        );
+
+        $user = self::findOne($query);
+
+
+        if($user instanceof User) //Si l'utilisateur existe
+        {
+            $password = self::encrypt($password);
+
+            if($user->getPassword() == $password)
+            {
+
+                //On récupère le compte correspondant à l'utilisateur
+                $accountCriteria = array(
+                    '_id' => new MongoId($user->getCurrentAccount()),
+                    'state' => (int)1
+                );
+                $account = $this->accountPdoManager->findOne($accountCriteria);
+
+                var_dump($account);
+
+                if($account instanceof Account) //Si le compte existe
+                {
+                    $refPlan = $this->refPlanPdoManager->findById($account->getRefPlan());
+
+                    if($refPlan instanceof RefPlan)
+                    {
+                        $account->setRefPlan($refPlan);
+                        $user->setCurrentAccount($account);
+                        return $user;
+                    }
+                    else
+                    {
+                        $errorInfo = 'RefPlan with ID '.$account->getRefPlan().' not found';
+                        return array('error' => $errorInfo);
+                    }
+                }
+                else
+                {
+                    $errorInfo = 'No active account with ID '.$user->getCurrentAccount().' for user '.$user->getId();
+                    return array('error' => $errorInfo);
+                }
+            }
+            else
+            {
+                $errorInfo = 'Password given ('.$password.') does not match with password in database.';
+                return array('error' => $errorInfo);
+            }
+        }
+        else
+        {
+            $errorInfo = 'No ACTIVE user found for the following e-mail: '.$email.' Maybe you didn\'t activate your account?';
+            return array('error' => $errorInfo);
+        }
     }
 }
 ?>

@@ -107,7 +107,7 @@ class ConnectionPdoManager extends AbstractPdoManager implements ConnectionManag
 
         $result = parent::__findOne('connection', $criteria, $fieldsToReturn);
 
-        if(!(is_array($result)) && !(array_key_exists('error', $result)))
+        if((is_array($result)) && !(array_key_exists('error', $result)))
         {
             if(empty($fieldsToReturn))
                 $result = new Connection($result);

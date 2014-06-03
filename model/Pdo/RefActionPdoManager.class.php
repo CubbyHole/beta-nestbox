@@ -96,7 +96,7 @@ class RefActionPdoManager extends AbstractPdoManager implements RefActionManager
 
         $result = parent::__findOne('refaction', $criteria, $fieldsToReturn);
 
-        if(!(is_array($result)) && !(array_key_exists('error', $result)))
+        if((is_array($result)) && !(array_key_exists('error', $result)))
         {
             if(empty($fieldsToReturn))
                 $result = new RefAction($result);

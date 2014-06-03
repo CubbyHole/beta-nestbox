@@ -143,7 +143,7 @@ class TransactionPdoManager extends AbstractPdoManager implements TransactionMan
 
         $result = parent::__findOne('transaction', $criteria, $fieldsToReturn);
 
-        if(!(is_array($result)) && !(array_key_exists('error', $result)))
+        if((is_array($result)) && !(array_key_exists('error', $result)))
         {
             if(empty($fieldsToReturn))
                 $result = new Transaction($result);
