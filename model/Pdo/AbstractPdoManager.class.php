@@ -34,9 +34,9 @@ abstract class AbstractPdoManager
      * @since 30/01/14
      */
 
-    public function __construct()
+    public function __construct($databaseName = self::DBNAME, $databasePort = self::DBPORT, $databaseHost = self::DBHOST)
     {
-        self::selectDatabase(self::DBNAME, self::DBPORT, self::DBHOST);
+        self::selectDatabase($databaseName, $databasePort, $databaseHost);
     }
 
     /**
