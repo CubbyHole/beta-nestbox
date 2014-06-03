@@ -19,9 +19,6 @@ abstract class AbstractPdoManager
     const DBPORT = 27017;
     const DBNAME = 'nestbox';
 
-    /** @var mixed $instance instance de la classe */
-    private static $instance;
-
     /** @var Mongo $connection connexion à la base */
     protected $connection;
 
@@ -30,6 +27,9 @@ abstract class AbstractPdoManager
 
     /**
      * Constructeur: génère la connexion à la base de données Mongo.
+     * @param string $databaseName
+     * @param int $databasePort
+     * @param string $databaseHost
      * @author Alban Truc
      * @since 30/01/14
      */
@@ -37,23 +37,6 @@ abstract class AbstractPdoManager
     public function __construct($databaseName = self::DBNAME, $databasePort = self::DBPORT, $databaseHost = self::DBHOST)
     {
         self::selectDatabase($databaseName, $databasePort, $databaseHost);
-    }
-
-    /**
-     * Renvoie une instance de la classe
-     * @author Alban Truc
-     * @since 30/01/14
-     * @return mixed
-     */
-
-    static public function instantiate()
-    {
-        if(!isset(self::$instance))
-        {
-            $class = __CLASS__;
-            self::$instance = new $class;
-        }
-        return self::$instance;
     }
 
     /**
@@ -88,7 +71,7 @@ abstract class AbstractPdoManager
          try
          {
              $this->connection = new MongoClient($connectionString);
-             $this->database = $this->connection->selectDB(AbstractPdoManager::DBNAME);
+             $this->database = $this->connection->selectDB($databaseName);
          }
          catch (Exception $e)
          {
@@ -115,7 +98,7 @@ abstract class AbstractPdoManager
     /**
      * Chiffre une chaîne de caractères
      * @author Alban Truc
-     * @param $string
+     * @param string $string
      * @since 02/2014
      * @return string
      */
