@@ -119,7 +119,7 @@ class Element
      */
     public function setName($name)
     {
-        $this->$name = (string)$name;
+        $this->name = (string)$name;
     }
 
     /**
