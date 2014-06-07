@@ -217,6 +217,128 @@ function copyRights($sourceElementList, $pastedElementList)
 }
 
 /**
+ * Renomme de la même manière que le ferait un OS Windows pour éviter les collisions de nom.
+ * Remarque: la version actuelle de cette fonction ne prend pas en compte l'extension du fichier (si l'élément est
+ * effectivement un fichier). On ne peut donc pas avoir dans un même emplacement un fichier test.flac et test.mp3.
+ * @author Alban Truc
+ * @param string $path
+ * @param Element $element
+ * @since 07/06/2014
+ * @return array|Element[]|string
+ */
+
+function avoidNameCollision($path, $element)
+{
+    if($element instanceof Element)
+    {
+        $elementPdoManager = new ElementPdoManager();
+
+        //un élément avec le même nom n'est-il pas déjà présent?
+        $seekForNameDuplicate = array(
+            'state' => (int)1,
+            'serverPath' => $path,
+            'name' => $element->getName()
+        );
+
+        $elementsWithSameName = $elementPdoManager->find($seekForNameDuplicate);
+        //var_dump($elementsWithSameName);
+
+        if(array_key_exists('error', $elementsWithSameName))
+        {
+            //cas no match found => pas d'élément avec le même nom à l'emplacement de destination
+            if($elementsWithSameName['error'] == 'No match found.')
+            {
+                $elementNameInDestination = $element->getName();
+            }
+            else return $elementsWithSameName;
+        }
+        else //nom déjà utilisé
+        {
+            //existe-t-il déjà des copies?
+            $seekForCopies = array(
+                'state' => (int)1,
+                'serverPath' => $path,
+                'name' => new MongoRegex("/^".$element->getName()." - Copy/i")
+            );
+
+            $duplicate = $elementPdoManager->find($seekForCopies, array('name' => TRUE, '_id' => FALSE));
+            //var_dump($duplicate);
+
+            if(array_key_exists('error', $duplicate))
+            {
+                //cas où il n'y a pas de copie
+                if($duplicate['error'] == 'No match found.')
+                {
+                    $elementNameInDestination = $element->getName().' - Copy';
+                }
+                else return $duplicate;
+            }
+            else //une ou plusieurs copies ont été trouvées
+            {
+                /**
+                 * actuellement nous avons un tableau de tableaux contenant les noms des duplicats.
+                 * Exemple: array ( [0] => array ( ['name'] => 'duplicaName' ) )
+                 * La manipulation suivante sert à enlever un "étage" pour obtenir par exemple
+                 * array ( [0] => 'duplicataName' ).
+                 * Nos environnements de développement ne disposant pas de PHP 5.5.0, nous ne pouvons
+                 * utiliser pour cela la fonction array_column. En remplacement, nous appliquons une
+                 * fonction via array_map.
+                 * @see http://www.php.net/manual/en/function.array-column.php
+                 * @see http://www.php.net/manual/en/function.array-map.php
+                 */
+
+                $f = function($array){return $array['name'];};
+                $duplicate = array_map($f, $duplicate);
+                //var_dump($duplicate);
+                //@see http://www.php.net/manual/en/function.in-array.php
+                if(!(in_array($element->getName().' - Copy', $duplicate)))
+                    $elementNameInDestination = $element->getName().' - Copy';
+                else
+                {
+                    /**
+                     * @see http://www.php.net/manual/en/function.unset.php
+                     * @see http://www.php.net/manual/en/function.array-search.php
+                     * Supprime dans le tableau la valeur correspondant à
+                     * $element->getName().' - Copy' pour simplifier les opérations suivantes
+                     */
+                    unset($duplicate[array_search($element->getName().' - Copy', $duplicate)]);
+
+                    //@see http://www.php.net/manual/en/function.sort.php cf. exemple #2
+                    sort($duplicate, SORT_NATURAL | SORT_FLAG_CASE);
+                    //var_dump($duplicate);
+
+                    /*
+                     * déterminer quel nom du type elementName - Copy (number) est disponible,
+                     * avec number le plus proche possible de 0
+                     */
+
+                    //indexe pour le tableau duplicate
+                    $keyNumber = 0;
+
+                    //Le "number" dont il était question plus haut commence à 2
+                    $copyNumberIndex = 2;
+                    //var_dump($duplicate); exit();
+                    if(!(empty($duplicate))) //Plus d'une copie
+                    {
+                        while($duplicate[$keyNumber] == $element->getName().' - Copy ('.$copyNumberIndex.')')
+                        {
+                            $keyNumber++;
+                            $copyNumberIndex++;
+                        }
+                    }
+
+                    $elementNameInDestination = $element->getName().' - Copy ('.$copyNumberIndex.')';
+                    //var_dump($elementNameInDestination); exit();
+                }
+            }
+        }
+        return $elementNameInDestination;
+    }
+    else
+        return array('error' => 'Object Element required');
+}
+
+/**
  * Prépare le retour de la fonction copyHandler
  * @author Alban Truc
  * @param array $options
@@ -526,233 +648,139 @@ function copyHandler($idElement, $idUser, $path, $options = array())
                         {
                             if($hasRightOnDestination === TRUE)
                             {
-                                //un élément avec le même nom n'est-il pas déjà présent?
-                                $seekForNameDuplicate = array(
-                                    'state' => (int)1,
-                                    'serverPath' => $path,
-                                    'name' => $element->getName()
-                                );
+                                $elementNameInDestination = avoidNameCollision($path, $element);
 
-                                $elementsWithSameName = $elementPdoManager->find($seekForNameDuplicate);
-                                //var_dump($elementsWithSameName);
-
-                                if(array_key_exists('error', $elementsWithSameName))
+                                if(is_string($elementNameInDestination))
                                 {
-                                    //cas no match found => pas d'élément avec le même nom à l'emplacement de destination
-                                    if($elementsWithSameName['error'] == 'No match found.')
-                                    {
-                                        $elementNameInDestination = $element->getName();
-                                    }
-                                    else return prepareCopyReturn($options, $operationSuccess, $elementsWithSameName, $impactedElements, $pastedElements, $failedToPaste);
-                                }
-                                else //nom déjà utilisé
-                                {
-                                    //existe-t-il déjà des copies?
-                                    $seekForCopies = array(
-                                        'state' => (int)1,
-                                        'serverPath' => $path,
-                                        'name' => new MongoRegex("/^".$element->getName()." - Copy/i")
-                                    );
+                                    $isElementAFolder = isFolder($element->getRefElement());
 
-                                    $duplicate = $elementPdoManager->find($seekForCopies, array('name' => TRUE, '_id' => FALSE));
-                                    //var_dump($duplicate);
-
-                                    if(array_key_exists('error', $duplicate))
+                                    if(!(is_array($isElementAFolder))) //pas d'erreur
                                     {
-                                        //cas où il n'y a pas de copie
-                                        if($duplicate['error'] == 'No match found.')
+                                        //récupérer la valeur de storage de l'utilisateur
+                                        $accountPdoManager = new AccountPdoManager();
+
+                                        $accountCriteria = array(
+                                            'state' => (int)1,
+                                            'idUser' => $idUser
+                                        );
+
+                                        $fieldsToReturn = array(
+                                            'storage' => TRUE,
+                                            'idRefPlan' => TRUE
+                                        );
+
+                                        $account = $accountPdoManager->findOne($accountCriteria, $fieldsToReturn);
+
+                                        if(!(array_key_exists('error', $account)))
                                         {
-                                            $elementNameInDestination = $element->getName().' - Copy';
+                                            $currentUserStorage = $account['storage'];
+
+                                            //récupérer le stockage maximum autorisé par le plan de l'utilisateur
+                                            $refPlanPdoManager = new RefPlanPdoManager();
+
+                                            $refPlan = $refPlanPdoManager->findById($account['idRefPlan'], array('maxStorage' => TRUE));
+
+                                            if(!(array_key_exists('error', $refPlan)))
+                                                $maxStorageAllowed = $refPlan['maxStorage'];
+                                            else
+                                                return prepareCopyReturn($options, $operationSuccess, $refPlan, $impactedElements, $pastedElements, $failedToPaste);
                                         }
-                                        else return prepareCopyReturn($options, $operationSuccess, $duplicate, $impactedElements, $pastedElements, $failedToPaste);
-                                    }
-                                    else //une ou plusieurs copies ont été trouvées
-                                    {
-                                        /**
-                                         * actuellement nous avons un tableau de tableaux contenant les noms des duplicats.
-                                         * Exemple: array ( [0] => array ( ['name'] => 'duplicaName' ) )
-                                         * La manipulation suivante sert à enlever un "étage" pour obtenir par exemple
-                                         * array ( [0] => 'duplicataName' ).
-                                         * Nos environnements de développement ne disposant pas de PHP 5.5.0, nous ne pouvons
-                                         * utiliser pour cela la fonction array_column. En remplacement, nous appliquons une
-                                         * fonction via array_map.
-                                         * @see http://www.php.net/manual/en/function.array-column.php
-                                         * @see http://www.php.net/manual/en/function.array-map.php
-                                         */
+                                        else return prepareCopyReturn($options, $operationSuccess, $account, $impactedElements, $pastedElements, $failedToPaste);
 
-                                        $f = function($array){return $array['name'];};
-                                        $duplicate = array_map($f, $duplicate);
-                                        //var_dump($duplicate);
-                                        //@see http://www.php.net/manual/en/function.in-array.php
-                                        if(!(in_array($element->getName().' - Copy', $duplicate)))
-                                            $elementNameInDestination = $element->getName().' - Copy';
-                                        else
+                                        if($isElementAFolder == TRUE) //l'élément est un dossier
                                         {
-                                            /**
-                                             * @see http://www.php.net/manual/en/function.unset.php
-                                             * @see http://www.php.net/manual/en/function.array-search.php
-                                             * Supprime dans le tableau la valeur correspondant à
-                                             * $element->getName().' - Copy' pour simplifier les opérations suivantes
-                                             */
-                                            unset($duplicate[array_search($element->getName().' - Copy', $duplicate)]);
+                                            $serverPath = $element->getServerPath().$element->getName().'/';
 
-                                            //@see http://www.php.net/manual/en/function.sort.php cf. exemple #2
-                                            sort($duplicate, SORT_NATURAL | SORT_FLAG_CASE);
-                                            //var_dump($duplicate);
+                                            //récupération des éléments contenus dans le dossier
+                                            $seekElementsInFolder = array(
+                                                'state' => (int)1,
+                                                'serverPath' => new MongoRegex("/^$serverPath/i")
+                                            );
 
-                                            /*
-                                             * déterminer quel nom du type elementName - Copy (number) est disponible,
-                                             * avec number le plus proche possible de 0
-                                             */
+                                            $impactedElements = $elementPdoManager->find($seekElementsInFolder);
+                                        }
 
-                                            //indexe pour le tableau duplicate
-                                            $keyNumber = 0;
+                                        $element->setName($elementNameInDestination);
+                                        $impactedElements[] = $element;
 
-                                            //Le "number" dont il était question plus haut commence à 2
-                                            $copyNumberIndex = 2;
-                                            //var_dump($duplicate); exit();
-                                            if(!(empty($duplicate))) //Plus d'une copie
+                                        //var_dump($impactedElements); exit();
+                                        if(!(array_key_exists('error', $impactedElements)))
+                                        {
+                                            $totalSize = sumSize($impactedElements); //calcul de la taille du contenu
+                                        }
+
+                                        if($currentUserStorage + $totalSize <= $maxStorageAllowed) //copie autorisée
+                                        {
+                                            $count = 0;
+
+                                            foreach($impactedElements as $impactedElement)
                                             {
-                                                while($duplicate[$keyNumber] == $element->getName().' - Copy ('.$copyNumberIndex.')')
+                                                //préparation de la copie
+                                                $elementCopy = clone $impactedElement;
+                                                $elementCopy->setId(new MongoId());
+
+                                                $explode = explode($serverPath, $elementCopy->getServerPath());
+
+                                                if(isset($explode[1]) && $explode[1] != '')
                                                 {
-                                                    $keyNumber++;
-                                                    $copyNumberIndex++;
+                                                    $elementPath = $path.$elementNameInDestination.'/'.$explode[1];
+                                                    $elementCopy->setServerPath($elementPath);
+                                                }
+                                                else
+                                                    $elementCopy->setServerPath($path.$elementNameInDestination.'/');
+
+                                                $elementCopy->setDownloadLink('');
+
+                                                //insertion de la copie
+                                                $copyResult = $elementPdoManager->create($elementCopy);
+
+                                                //gestion des erreurs
+                                                if(!(is_bool($copyResult))) //erreur
+                                                {
+                                                    $failedToPaste[$count]['elementToCopy'] = $impactedElement;
+                                                    $failedToPaste[$count]['elementCopy'] = $elementCopy;
+                                                    $failedToPaste[$count]['error'] = $copyResult['error'];
+                                                    $count++;
+                                                }
+                                                elseif($copyResult == TRUE)
+                                                    $pastedElements[] = $elementCopy;
+                                            }
+
+                                            if($totalSize > 0)
+                                            {
+                                                $updateCriteria = array(
+                                                    '_id' => $account['_id'],
+                                                    'state' => (int)1
+                                                );
+                                                $storageUpdate = array('$inc' => array('storage' => $totalSize));
+                                                $accountUpdate = $accountPdoManager->update($updateCriteria, $storageUpdate);
+
+                                                if(is_array($accountUpdate) && array_key_exists('error', $accountUpdate))
+                                                {
+                                                    $errorMessage = 'Error when trying to add '.$totalSize.' to user account';
+                                                    return prepareCopyReturn($options, $operationSuccess, $errorMessage, $impactedElements, $pastedElements, $failedToPaste);
                                                 }
                                             }
 
-                                            $elementNameInDestination = $element->getName().' - Copy ('.$copyNumberIndex.')';
-                                            //var_dump($elementNameInDestination); exit();
-                                        }
-                                    }
-                                }
+                                            if(array_key_exists('keepRights', $options) && $options['keepRights'] == TRUE)
+                                                copyRights($impactedElements, $pastedElements);
 
-                                $isElementAFolder = isFolder($element->getRefElement());
+                                            //@todo copie sur le serveur de fichier
 
-                                if(!(is_array($isElementAFolder))) //pas d'erreur
-                                {
-                                    //récupérer la valeur de storage de l'utilisateur
-                                    $accountPdoManager = new AccountPdoManager();
+                                            $operationSuccess = TRUE;
 
-                                    $accountCriteria = array(
-                                        'state' => (int)1,
-                                        'idUser' => $idUser
-                                    );
+                                            return prepareCopyReturn($options, $operationSuccess, array(), $impactedElements, $pastedElements, $failedToPaste);
 
-                                    $fieldsToReturn = array(
-                                        'storage' => TRUE,
-                                        'idRefPlan' => TRUE
-                                    );
-
-                                    $account = $accountPdoManager->findOne($accountCriteria, $fieldsToReturn);
-
-                                    if(!(array_key_exists('error', $account)))
-                                    {
-                                        $currentUserStorage = $account['storage'];
-
-                                        //récupérer le stockage maximum autorisé par le plan de l'utilisateur
-                                        $refPlanPdoManager = new RefPlanPdoManager();
-
-                                        $refPlan = $refPlanPdoManager->findById($account['idRefPlan'], array('maxStorage' => TRUE));
-
-                                        if(!(array_key_exists('error', $refPlan)))
-                                            $maxStorageAllowed = $refPlan['maxStorage'];
+                                        } //pas assez d'espace
                                         else
-                                            return prepareCopyReturn($options, $operationSuccess, $refPlan, $impactedElements, $pastedElements, $failedToPaste);
-                                    }
-                                    else return prepareCopyReturn($options, $operationSuccess, $account, $impactedElements, $pastedElements, $failedToPaste);
-
-                                    if($isElementAFolder == TRUE) //l'élément est un dossier
-                                    {
-                                        $serverPath = $element->getServerPath().$element->getName().'/';
-
-                                        //récupération des éléments contenus dans le dossier
-                                        $seekElementsInFolder = array(
-                                            'state' => (int)1,
-                                            'serverPath' => new MongoRegex("/^$serverPath/i")
-                                        );
-
-                                        $impactedElements = $elementPdoManager->find($seekElementsInFolder);
-                                    }
-
-                                    $element->setName($elementNameInDestination);
-                                    $impactedElements[] = $element;
-
-                                    //var_dump($impactedElements); exit();
-                                    if(!(array_key_exists('error', $impactedElements)))
-                                    {
-                                        $totalSize = sumSize($impactedElements); //calcul de la taille du contenu
-                                    }
-
-                                    if($currentUserStorage + $totalSize <= $maxStorageAllowed) //copie autorisée
-                                    {
-                                        $count = 0;
-
-                                        foreach($impactedElements as $impactedElement)
                                         {
-                                            //préparation de la copie
-                                            $elementCopy = clone $impactedElement;
-                                            $elementCopy->setId(new MongoId());
-
-                                            $explode = explode($serverPath, $elementCopy->getServerPath());
-
-                                            if(isset($explode[1]) && $explode[1] != '')
-                                            {
-                                                $elementPath = $path.$elementNameInDestination.'/'.$explode[1];
-                                                $elementCopy->setServerPath($elementPath);
-                                            }
-                                            else
-                                                $elementCopy->setServerPath($path.$elementNameInDestination.'/');
-
-                                            $elementCopy->setDownloadLink('');
-
-                                            //insertion de la copie
-                                            $copyResult = $elementPdoManager->create($elementCopy);
-
-                                            //gestion des erreurs
-                                            if(!(is_bool($copyResult))) //erreur
-                                            {
-                                                $failedToPaste[$count]['elementToCopy'] = $impactedElement;
-                                                $failedToPaste[$count]['elementCopy'] = $elementCopy;
-                                                $failedToPaste[$count]['error'] = $copyResult['error'];
-                                                $count++;
-                                            }
-                                            elseif($copyResult == TRUE)
-                                                $pastedElements[] = $elementCopy;
+                                            $errorMessage = 'Not enough space available for your account to proceed action';
+                                            return prepareCopyReturn($options, $operationSuccess, $errorMessage, $impactedElements, $pastedElements, $failedToPaste);
                                         }
-
-                                        if($totalSize > 0)
-                                        {
-                                            $updateCriteria = array(
-                                                '_id' => $account['_id'],
-                                                'state' => (int)1
-                                            );
-                                            $storageUpdate = array('$inc' => array('storage' => $totalSize));
-                                            $accountUpdate = $accountPdoManager->update($updateCriteria, $storageUpdate);
-
-                                            if(is_array($accountUpdate) && array_key_exists('error', $accountUpdate))
-                                            {
-                                                $errorMessage = 'Error when trying to add '.$totalSize.' to user account';
-                                                return prepareCopyReturn($options, $operationSuccess, $errorMessage, $impactedElements, $pastedElements, $failedToPaste);
-                                            }
-                                        }
-
-                                        if(array_key_exists('keepRights', $options) && $options['keepRights'] == TRUE)
-                                            copyRights($impactedElements, $pastedElements);
-
-                                        //@todo copie sur le serveur de fichier
-
-                                        $operationSuccess = TRUE;
-
-                                        return prepareCopyReturn($options, $operationSuccess, array(), $impactedElements, $pastedElements, $failedToPaste);
-
-                                    } //pas assez d'espace
-                                    else
-                                    {
-                                        $errorMessage = 'Not enough space available for your account to proceed action';
-                                        return prepareCopyReturn($options, $operationSuccess, $errorMessage, $impactedElements, $pastedElements, $failedToPaste);
                                     }
+                                    else return prepareCopyReturn($options, $operationSuccess, $isElementAFolder, $impactedElements, $pastedElements, $failedToPaste);
                                 }
-                                else return prepareCopyReturn($options, $operationSuccess, $isElementAFolder, $impactedElements, $pastedElements, $failedToPaste);
+                                else return $elementNameInDestination;
                             }
                             else return prepareCopyReturn($options, $operationSuccess, array('error' => 'Access denied in destination'), $impactedElements, $pastedElements, $failedToPaste);
                         }
