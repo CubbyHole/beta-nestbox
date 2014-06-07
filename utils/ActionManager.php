@@ -707,76 +707,77 @@ function copyHandler($idElement, $idUser, $path, $options = array())
                                         if(!(array_key_exists('error', $impactedElements)))
                                         {
                                             $totalSize = sumSize($impactedElements); //calcul de la taille du contenu
-                                        }
 
-                                        if($currentUserStorage + $totalSize <= $maxStorageAllowed) //copie autorisée
-                                        {
-                                            $count = 0;
-
-                                            foreach($impactedElements as $impactedElement)
+                                            if($currentUserStorage + $totalSize <= $maxStorageAllowed) //copie autorisée
                                             {
-                                                //préparation de la copie
-                                                $elementCopy = clone $impactedElement;
-                                                $elementCopy->setId(new MongoId());
+                                                $count = 0;
 
-                                                $explode = explode($serverPath, $elementCopy->getServerPath());
-
-                                                if(isset($explode[1]) && $explode[1] != '')
+                                                foreach($impactedElements as $impactedElement)
                                                 {
-                                                    $elementPath = $path.$elementNameInDestination.'/'.$explode[1];
-                                                    $elementCopy->setServerPath($elementPath);
+                                                    //préparation de la copie
+                                                    $elementCopy = clone $impactedElement;
+                                                    $elementCopy->setId(new MongoId());
+
+                                                    $explode = explode($serverPath, $elementCopy->getServerPath());
+
+                                                    if(isset($explode[1]) && $explode[1] != '')
+                                                    {
+                                                        $elementPath = $path.$elementNameInDestination.'/'.$explode[1];
+                                                        $elementCopy->setServerPath($elementPath);
+                                                    }
+                                                    else
+                                                        $elementCopy->setServerPath($path.$elementNameInDestination.'/');
+
+                                                    $elementCopy->setDownloadLink('');
+
+                                                    //insertion de la copie
+                                                    $copyResult = $elementPdoManager->create($elementCopy);
+
+                                                    //gestion des erreurs
+                                                    if(!(is_bool($copyResult))) //erreur
+                                                    {
+                                                        $failedToPaste[$count]['elementToCopy'] = $impactedElement;
+                                                        $failedToPaste[$count]['elementCopy'] = $elementCopy;
+                                                        $failedToPaste[$count]['error'] = $copyResult['error'];
+                                                        $count++;
+                                                    }
+                                                    elseif($copyResult == TRUE)
+                                                        $pastedElements[] = $elementCopy;
                                                 }
-                                                else
-                                                    $elementCopy->setServerPath($path.$elementNameInDestination.'/');
 
-                                                $elementCopy->setDownloadLink('');
-
-                                                //insertion de la copie
-                                                $copyResult = $elementPdoManager->create($elementCopy);
-
-                                                //gestion des erreurs
-                                                if(!(is_bool($copyResult))) //erreur
+                                                if($totalSize > 0)
                                                 {
-                                                    $failedToPaste[$count]['elementToCopy'] = $impactedElement;
-                                                    $failedToPaste[$count]['elementCopy'] = $elementCopy;
-                                                    $failedToPaste[$count]['error'] = $copyResult['error'];
-                                                    $count++;
-                                                }
-                                                elseif($copyResult == TRUE)
-                                                    $pastedElements[] = $elementCopy;
-                                            }
+                                                    $updateCriteria = array(
+                                                        '_id' => $account['_id'],
+                                                        'state' => (int)1
+                                                    );
+                                                    $storageUpdate = array('$inc' => array('storage' => $totalSize));
+                                                    $accountUpdate = $accountPdoManager->update($updateCriteria, $storageUpdate);
 
-                                            if($totalSize > 0)
+                                                    if(is_array($accountUpdate) && array_key_exists('error', $accountUpdate))
+                                                    {
+                                                        $errorMessage = 'Error when trying to add '.$totalSize.' to user account';
+                                                        return prepareCopyReturn($options, $operationSuccess, $errorMessage, $impactedElements, $pastedElements, $failedToPaste);
+                                                    }
+                                                }
+
+                                                if(array_key_exists('keepRights', $options) && $options['keepRights'] == TRUE)
+                                                    copyRights($impactedElements, $pastedElements);
+
+                                                //@todo copie sur le serveur de fichier
+
+                                                $operationSuccess = TRUE;
+
+                                                return prepareCopyReturn($options, $operationSuccess, array(), $impactedElements, $pastedElements, $failedToPaste);
+
+                                            } //pas assez d'espace
+                                            else
                                             {
-                                                $updateCriteria = array(
-                                                    '_id' => $account['_id'],
-                                                    'state' => (int)1
-                                                );
-                                                $storageUpdate = array('$inc' => array('storage' => $totalSize));
-                                                $accountUpdate = $accountPdoManager->update($updateCriteria, $storageUpdate);
-
-                                                if(is_array($accountUpdate) && array_key_exists('error', $accountUpdate))
-                                                {
-                                                    $errorMessage = 'Error when trying to add '.$totalSize.' to user account';
-                                                    return prepareCopyReturn($options, $operationSuccess, $errorMessage, $impactedElements, $pastedElements, $failedToPaste);
-                                                }
+                                                $errorMessage = 'Not enough space available for your account to proceed action';
+                                                return prepareCopyReturn($options, $operationSuccess, $errorMessage, $impactedElements, $pastedElements, $failedToPaste);
                                             }
-
-                                            if(array_key_exists('keepRights', $options) && $options['keepRights'] == TRUE)
-                                                copyRights($impactedElements, $pastedElements);
-
-                                            //@todo copie sur le serveur de fichier
-
-                                            $operationSuccess = TRUE;
-
-                                            return prepareCopyReturn($options, $operationSuccess, array(), $impactedElements, $pastedElements, $failedToPaste);
-
-                                        } //pas assez d'espace
-                                        else
-                                        {
-                                            $errorMessage = 'Not enough space available for your account to proceed action';
-                                            return prepareCopyReturn($options, $operationSuccess, $errorMessage, $impactedElements, $pastedElements, $failedToPaste);
                                         }
+                                        else return prepareCopyReturn($options, $operationSuccess, $impactedElements, $impactedElements, $pastedElements, $failedToPaste);
                                     }
                                     else return prepareCopyReturn($options, $operationSuccess, $isElementAFolder, $impactedElements, $pastedElements, $failedToPaste);
                                 }
@@ -802,13 +803,29 @@ function renameHandler($idElement, $idUser, $name)
     $idElement = new MongoId($idElement);
     $idUser = new MongoId($idUser);
 
-    // 11 correspond au droit de lecture et écriture
-    $hasRight = actionAllowed($idElement, $idUser, '11');
+    /*
+     * 11 correspond au droit de lecture et écriture.
+     * Si on souhaite accepter la copie avec des droits de plus bas niveau, il suffit d'ajouter les codes correspondant
+     * au tableau en 3e paramètre ci-dessous.
+     */
+
+    $hasRight = actionAllowed($idElement, $idUser, array('11'));
 
     if(!(is_array($hasRight)))
     {
         if($hasRight === TRUE)
         {
+            //récupère l'élément
+            $elementPdoManager = new ElementPdoManager();
+            $element = $elementPdoManager->findById($idElement);
+
+            if($element instanceof Element)
+            {
+                if($element->getState() == 1)
+                {
+
+                }
+            }
 
         }
         else return array('error' => 'Access denied');
@@ -816,18 +833,75 @@ function renameHandler($idElement, $idUser, $name)
     else return $hasRight;
 }
 
-function moveHandler($idElement, $idUser, $path)
+function moveHandler($idElement, $idUser, $path, $options = array())
 {
     $idElement = new MongoId($idElement);
     $idUser = new MongoId($idUser);
 
-    // 11 correspond au droit de lecture et écriture
-    $hasRight = actionAllowed($idElement, $idUser, '11');
+    /*
+     * 11 correspond au droit de lecture et écriture.
+     * Si on souhaite accepter la copie avec des droits de plus bas niveau, il suffit d'ajouter les codes correspondant
+     * au tableau en 3e paramètre ci-dessous.
+     */
+
+    $hasRight = actionAllowed($idElement, $idUser, array('11'));
 
     if(!(is_array($hasRight)))
     {
         if($hasRight === TRUE)
         {
+            //récupère l'élément
+            $elementPdoManager = new ElementPdoManager();
+            $element = $elementPdoManager->findById($idElement);
+
+            if($element instanceof Element)
+            {
+                if($element->getState() == 1)
+                {
+                    //var_dump($element->getName());
+                    //var_dump($element->getServerPath());
+                    /*
+                     * extraction de l'emplacement du dossier de destination à partir de $path
+                     * @see http://www.php.net/manual/en/function.implode.php
+                     * @see http://www.php.net/manual/en/function.explode.php
+                     */
+                    $destinationFolderPath = implode('/', explode('/', $path, -2)).'/';
+
+                    /*
+                     * extraction du nom du dossier de destination à partir du $path
+                     * @see http://www.php.net/manual/en/function.array-slice.php
+                     */
+                    $destinationFolderName = implode(array_slice(explode('/', $path), -2, 1));
+
+                    //récupération de l'id de l'élément en base correspondant au dossier de destination
+                    $elementCriteria = array(
+                        'state' => (int)1,
+                        'name' => $destinationFolderName,
+                        'serverPath' => $destinationFolderPath
+                    );
+
+                    $idDestinationFolder = $elementPdoManager->findOne($elementCriteria, array('_id' => TRUE));
+
+                    if(!(array_key_exists('error', $idDestinationFolder)))
+                    {
+                        //vérification des droits dans la destination
+                        $hasRightOnDestination = actionAllowed($idDestinationFolder['_id'], $idUser, array('11'));
+
+                        if(!(is_array($hasRightOnDestination)))
+                        {
+                            if($hasRightOnDestination === TRUE)
+                            {
+                                $elementNameInDestination = avoidNameCollision($path, $element);
+
+                                if(is_string($elementNameInDestination))
+                                {
+
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
         }
         else return array('error' => 'Access denied');
