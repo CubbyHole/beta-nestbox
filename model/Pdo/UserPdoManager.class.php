@@ -159,7 +159,7 @@ class UserPdoManager extends AbstractPdoManager implements UserManagerInterface{
 
         $result = parent::__findOne('user', $criteria, $fieldsToReturn);
 
-        if(!(array_key_exists('error', $result)))
+        if((is_array($result)) && !(array_key_exists('error', $result)))
         {
             if(empty($fieldsToReturn))
                 $result = new User($result);
