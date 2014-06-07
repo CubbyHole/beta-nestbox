@@ -101,7 +101,8 @@ function updateFolderStatus($serverPath)
         if($findElement['error'] == 'No match found.')
         {
             $refElementEmptyDirectory = $refElementPdoManager->findOne(array(
-                'code' => '4002'
+                'code' => '4002',
+                'state' => 1
             ));
             if($refElementEmptyDirectory instanceof RefElement)
                 $idRefElementEmptyDirectory = $refElementEmptyDirectory->getId();
@@ -111,21 +112,17 @@ function updateFolderStatus($serverPath)
             // on récupère le nom du dossier ou l'on se trouve
             $explode = explode("/", $serverPath);
             $directoryCurrent = $explode[sizeof($explode)-2];
-            var_dump($directoryCurrent);
 
             // on récupère son serverPath
             $pattern = "#".$directoryCurrent."/#";
             $path = preg_replace($pattern, "", $serverPath,1);
 
-            var_dump($path);
-            // on réalise un findAndModify sur le dossier en question pour modifier son refElement (à Directory File Empty)
-            $criteria = array("name" => $directoryCurrent, "serverPath" => $path);
+            // on réalise un update sur le dossier en question pour modifier son refElement (à Directory File Empty)
+            $criteria = array('name' => $directoryCurrent, 'serverPath' => $path, 'state' => 1);
             $update = array(
-                '$set' => array("idRefElement" => $idRefElementEmptyDirectory)
+                '$set' => array('idRefElement' => $idRefElementEmptyDirectory)
             );
-            $options = array('new' => true );
-
-            return $elementPdoManager->update($criteria, $update, $options);
+            return $elementPdoManager->update($criteria, $update);
         }
         else
             return $findElement;
@@ -133,7 +130,8 @@ function updateFolderStatus($serverPath)
     elseif(is_array($findElement) && !(array_key_exists('error', $findElement)))
     {
         $refElementNotEmptyDirectory = $refElementPdoManager->findOne(array(
-            'code' => '4003'
+            'code' => '4003',
+            'state' => 1
         ));
         if($refElementNotEmptyDirectory instanceof RefElement)
             $idRefElementNotEmptyDirectory = $refElementNotEmptyDirectory->getId();
@@ -143,21 +141,17 @@ function updateFolderStatus($serverPath)
         // on récupère le nom du dossier ou l'on se trouve
         $explode = explode("/", $serverPath);
         $directoryCurrent = $explode[sizeof($explode)-2];
-        var_dump($directoryCurrent);
 
         // on récupère son serverPath
         $pattern = "#".$directoryCurrent."/#";
         $path = preg_replace($pattern, "", $serverPath,1);
 
-        var_dump($path);
-        // on réalise un findAndModify sur le dossier en question pour modifier son refElement (à Directory File Not Empty)
-        $criteria = array("name" => $directoryCurrent, "serverPath" => $path);
+        // on réalise un update sur le dossier en question pour modifier son refElement (à Directory File Not Empty)
+        $criteria = array("name" => $directoryCurrent, "serverPath" => $path, 'state' => 1);
         $update = array(
             '$set' => array("idRefElement" => $idRefElementNotEmptyDirectory)
         );
-        $options = array('new' => true );
-
-        return $elementPdoManager->update($criteria, $update, $options);
+        return $elementPdoManager->update($criteria, $update);
     }
 }
 
@@ -350,20 +344,6 @@ function avoidNameCollision($path, $element)
                     //var_dump($duplicate); exit();
                     if(!(empty($duplicate))) //Plus d'une copie
                     {
-//                        var_dump($keyNumber);
-//                        var_dump($duplicate[$keyNumber]);
-//                        var_dump($copyNumberIndex);
-//                        var_dump($element->getName().' - Copy ('.$copyNumberIndex.')');
-//                        while($duplicate[$keyNumber] == $element->getName().' - Copy ('.$copyNumberIndex.')')
-//                        {
-////                            $keyNumber++;
-//                            $copyNumberIndex++;
-//                            if(!(isset($duplicate[$keyNumber++])))
-//                                break;
-//                            else
-//                                $keyNumber++;
-//
-//                        }
                         $count = 0;
                         while(isset($duplicate[$count]))
                         {
@@ -763,8 +743,10 @@ function copyHandler($idElement, $idUser, $path, $options = array())
                                 $elementsInFolder = $elementPdoManager->find($seekElementsInFolder);
                             }
 
-                            if(!(array_key_exists('error', $elementsInFolder)))
-                                $impactedElements = $elementsInFolder;
+
+                                if(isset($elementsInFolder) && !(array_key_exists('error', $elementsInFolder)))
+                                    $impactedElements = $elementsInFolder;
+
 
                             $impactedElements[] = $element;
 
