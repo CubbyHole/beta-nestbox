@@ -575,10 +575,12 @@ function disableHandler($idElement, $idUser, $returnImpactedElements = FALSE)
  *          'pastedElements' => array(),
  *          'failedToPaste' => array())
  *       )
+ * @author Alban Truc & Harry Bellod
  * @param string|MongoId $idElement
  * @param string|MongoId $idUser
  * @param string $path
  * @param array $options
+ * @since 07/06/2014
  * @return array
  * @todo optimisation: découpage en plusieurs fonctions de moins de 80 lignes
  * @todo meilleure prise en charge des conflits de noms: actuellement l'extension n'est pas prise en compte
