@@ -92,22 +92,36 @@ function updateFolderStatus($serverPath)
     $elementPdoManager = new ElementPdoManager();
     $refElementPdoManager = new RefElementPdoManager();
 
-    // on vérifie si il reste des éléments actifs dans le dossier ou l'on désactive l'élément
-    $findElement = $elementPdoManager->find(array("serverPath" => $serverPath, "state" => 1));
-
-    // si il n'y en a plus alors on passe le dossier courant à empty
-    if(is_array($findElement) && (array_key_exists('error', $findElement)))
+    if($serverPath != '/')
     {
-        if($findElement['error'] == 'No match found.')
+        // on vérifie si il reste des éléments actifs dans le dossier ou l'on désactive l'élément
+        $findElement = $elementPdoManager->find(array("serverPath" => $serverPath, "state" => 1));
+
+        // si il n'y en a plus alors on passe le dossier courant à empty
+        if(array_key_exists('error', $findElement))
         {
-            $refElementEmptyDirectory = $refElementPdoManager->findOne(array(
-                'code' => '4002',
+            if($findElement['error'] == 'No match found.')
+            {
+                $refElement = $refElementPdoManager->findOne(array(
+                    'code' => '4002',
+                    'state' => 1
+                ));
+            }
+            else
+                return $findElement;
+        }
+        else
+        {
+            $refElement = $refElementPdoManager->findOne(array(
+                'code' => '4003',
                 'state' => 1
             ));
-            if($refElementEmptyDirectory instanceof RefElement)
-                $idRefElementEmptyDirectory = $refElementEmptyDirectory->getId();
+        }
+
+            if(!(array_key_exists('error', $refElement)))
+                $idRefElement = $refElement->getId();
             else
-                return $refElementEmptyDirectory;
+                return $refElement;
 
             // on récupère le nom du dossier ou l'on se trouve
             $explode = explode("/", $serverPath);
@@ -120,39 +134,12 @@ function updateFolderStatus($serverPath)
             // on réalise un update sur le dossier en question pour modifier son refElement (à Directory File Empty)
             $criteria = array('name' => $directoryCurrent, 'serverPath' => $path, 'state' => 1);
             $update = array(
-                '$set' => array('idRefElement' => $idRefElementEmptyDirectory)
+                '$set' => array('idRefElement' => $idRefElement)
             );
             return $elementPdoManager->update($criteria, $update);
-        }
-        else
-            return $findElement;
     }
-    elseif(is_array($findElement) && !(array_key_exists('error', $findElement)))
-    {
-        $refElementNotEmptyDirectory = $refElementPdoManager->findOne(array(
-            'code' => '4003',
-            'state' => 1
-        ));
-        if($refElementNotEmptyDirectory instanceof RefElement)
-            $idRefElementNotEmptyDirectory = $refElementNotEmptyDirectory->getId();
-        else
-            return $refElementNotEmptyDirectory;
+    return true; //rien à faire
 
-        // on récupère le nom du dossier ou l'on se trouve
-        $explode = explode("/", $serverPath);
-        $directoryCurrent = $explode[sizeof($explode)-2];
-
-        // on récupère son serverPath
-        $pattern = "#".$directoryCurrent."/#";
-        $path = preg_replace($pattern, "", $serverPath,1);
-
-        // on réalise un update sur le dossier en question pour modifier son refElement (à Directory File Not Empty)
-        $criteria = array("name" => $directoryCurrent, "serverPath" => $path, 'state' => 1);
-        $update = array(
-            '$set' => array("idRefElement" => $idRefElementNotEmptyDirectory)
-        );
-        return $elementPdoManager->update($criteria, $update);
-    }
 }
 
 /**
@@ -337,9 +324,9 @@ function avoidNameCollision($path, $element)
                      */
 
                     //indexe pour le tableau duplicate
-                    $keyNumber = 0;
+                    //$keyNumber = 0;
 
-                    //Le "number" dont il était question plus haut commence à 2
+                    //Le "number" commence à 2
                     $copyNumberIndex = 2;
                     //var_dump($duplicate); exit();
                     if(!(empty($duplicate))) //Plus d'une copie
