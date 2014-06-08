@@ -12,7 +12,7 @@ if(isset($_SESSION['userId']))
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Nestbox - File explorer</title>
+    <title>Nestbox - File explore1r</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
