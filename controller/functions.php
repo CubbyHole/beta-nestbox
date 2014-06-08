@@ -26,7 +26,8 @@
 //    download($_GET['filepath'], $_GET['filename']);
 //}
 //
-                                                                                /** En récupérant les informations de l'élément la fonction download sur le serveur de fichier devrais marcher */
+
+/** En récupérant les informations de l'élément la fonction download sur le serveur de fichier devrais marcher */
 //function download($filepath, $filename){
 //    if(file_exists($filepath) )
 //    {
@@ -41,41 +42,109 @@
 //    }
 //}
 //
+$elementManager = new ElementPdoManager();
+if(isset($_SESSION['userId']))
+    $userId = $_SESSION['userId'];
 
 /** Si l'utilisateur décide de créer un nouveau dossier => currentDirectory est un input caché dans le formulaire pour récupérer le dossier courant */
 if(isset($_POST['createNewFolder']) && isset($_POST['currentDirectory']))
 {
-    createNewFolder($_POST['nameNewFolder'], $_POST['currentDirectory']);
+    $elementManager->create(array('downloadLink' => '',
+        'hash' => '3b85726f4beab8fdfb655df6a05b74f7449e1097',
+        'idOwner' => new MongoId("536749adedb5025416000029"),
+        'idRefElement' => new MongoId("53639f93edb5021808000075"),
+        'name' => $_POST['nameNewFolder'],
+        'serverPath' => $_POST['currentDirectory'],
+        'size' => new MongoInt32(0),
+        'state' => new MongoInt32(1)));
+    //$elementManager->createNewFolder($_POST['nameNewFolder'], $_POST['currentDirectory']);
 }
-elseif(isset($_POST['createNewFolder']) && !isset($_POST['currentDirectory']))
+
+/** Si l'utilisateur veut renommer un élement */
+if(isset($_POST['renameElem']) && !empty($_POST['renameElem']) && isset($_POST['idElement']))
 {
-    createNewFolder($_POST['nameNewFolder'], "/");
+    $elementManager->renameElement($_POST['idElement'],$_POST['newName'], $userId);
 }
-
-
 
 /** Si l'utilisateur décide de supprimer un dossier ou un fichier */
-if(isset($_POST['deleteElem']) && isset($_POST['currentDirectory']))
+if(isset($_POST['disableElem']) && isset($_POST['idElement']))
 {
-    deleteElement($_POST['elementToDelete'], $_POST['currentDirectory']);
-}
-elseif(isset($_POST['deleteElem']) && !isset($_POST['currentDirectory']))
-{
-    deleteElement($_POST['elementToDelete'], "/");
+    $idElement = new MongoId($_POST['idElement']);
+    disableHandler($idElement, $userId);
 }
 
 
-function arborescence($owner, $isOwner, $dir){
+/* Si l'utilisateur décide de copier un fichier ou un dossier */
+if(isset($_POST['copyElem']) && isset($_POST['destination']))
+{
+    copyHandler($_POST['idElement'], $userId, $_POST['destination']);
+}
+
+/* Si l'utilisateur décide de couper un fichier ou un dossier */
+if(isset($_POST['moveElem']) && isset($_POST['destination']))
+{
+   if(isset($_POST['keepRights']))
+       $keepRights = true;
+   else
+       $keepRights = false;
+
+    if(isset($_POST['keepDownloadLink']))
+        $keepDownloadLink = true;
+    else
+        $keepDownloadLink = false;
+
+    $options = array('returnImpactedElements' => true, 'returnMovedElements' => true, 'keepRights' => $keepRights, 'keepDownloadLinks' => $keepDownloadLink);
+    moveHandler($_POST['idElement'], $userId, $_POST['destination'], $options);
+}
+
+/* Si l'utilisateur décide d'uploader un element */
+if(isset($_POST['uploadElem']) && isset($_POST['destination']) && isset($_POST['elementName']) && isset($_POST['elementSize']) && isset($_POST['elementType']))
+{
+    // si upload basique
+//    $elementManager->uploadElement($_FILES['element']['name'], $userId, $_FILES['element']['type'], $_POST['currentDirectory']);
+    //si upload drag
+
+    $elementManager->uploadElement($_POST['elementName'], $userId, $_POST['elementType'], $_POST['elementSize'], $_POST['destination']);
+}
+
+
+
+///* Si l'utilisateur décide de coller un élement */
+//if(isset($_POST['pasteElem']) && isset($_POST['currentDirectory']))
+//{
+//    $elementManager->pasteElement($_POST['elementToPaste'], $_POST['currentDirectory'], $userId);
+//}
+//elseif(isset($_POST['pasteElem']) && !isset($_POST['currentDirectory']))
+//{
+//    $elementManager->pasteElement($_POST['elementToPaste'], "/", $userId);
+//}
+
+
+
+function arborescence($owner, $isOwner, $dir)
+{
     $elementManager = new ElementPdoManager();
     $refElementManager = new RefElementPdoManager();
 
     $elementList = $elementManager->returnElementsDetails($owner, $isOwner, $dir);
 
+
     echo '<br />';
     echo '<br />';
+
+    echo "<!-- Arborescence -->";
+    echo '<div class="col-md-3 arborescence">';
     // Root
     if(!isset($_GET['dir']))
-        echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_open.png" width="18px" height="18px" /><a href="'.$_SERVER['PHP_SELF'].'">Root</a></span></div></div>';
+        echo '
+                <div class="row" data-element-type="folder">
+                    <div id="arbo">
+                        <span class="cell">
+                            <img src="content/img/icon_dir_open.png" width="18px" height="18px" />
+                            <a href="'.$_SERVER['PHP_SELF'].'">Root</a>
+                        </span>
+                    </div>
+                </div>';
     else
         echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_close.png" width="18px" height="18px" /><a href="'.$_SERVER['PHP_SELF'].'">Root</a></span></div></div>';
 
@@ -89,35 +158,74 @@ function arborescence($owner, $isOwner, $dir){
             case 4002: // dossier vide
                 if(isset ($_GET['dir']) && $_GET['dir'] == "/".$element->getName()."/")
                 {
-                    echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_open.png" width="18px" height="18px" style="margin-left:15px;"/><a href="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/">'.$element->getName().'</a></span></div></div>';
+                    echo '<div class="row" data-element-type="folder">
+                            <div id="arbo">
+                                <span class="cell">
+                                    <img src="content/img/icon_dir_open.png" width="18px" height="18px" style="margin-left:15px;"/>
+                                    <span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/" style="cursor:pointer;">
+                                        '.$element->getName().'
+                                    </span>
+                                </span>
+                            </div>
+                         </div>';
                 }
                 else
-                    echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_close.png" width="18px" height="18px" style="margin-left:15px;"/><a href="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/">'.$element->getName().'</a></span></div></div>';
+                    echo '<div class="row" data-element-type="folder">
+                            <div id="arbo">
+                                <span class="cell">
+                                    <img src="content/img/icon_dir_close.png" width="18px" height="18px" style="margin-left:15px;"/>
+                                    <span onclick="clickable(this)"  data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/">
+                                        '.$element->getName().'
+                                    </span>
+                                </span>
+                            </div>
+                          </div>';
                 break;
             case 4003: // dossier non vide
                 if(isset ($_GET['dir']) && (preg_match('#'.$element->getName().'/#', '#'.$_GET['dir'].'/#')))
                 {
-                    echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_open.png" width="18px" height="18px" style="margin-left:15px;"/><a href="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/">'.$element->getName().'</a></span></div></div>';
+                    echo '<div class="row" data-element-type="folder">
+                            <div id="arbo">
+                                <span class="cell">
+                                    <img src="content/img/icon_dir_open.png" width="18px" height="18px" style="margin-left:15px;"/>
+                                    <span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/">
+                                        '.$element->getName().'
+                                    </span>
+                                </span>
+                            </div>
+                          </div>';
                     $x = "/".$element->getName()."/";
-                    under_arborescence($owner, $isOwner, $x);
+                    //under_arborescence($owner, $isOwner, $x);
                     /*if($_GET['dir'] != $x)
                         under_arborescence($owner, $isOwner, $_GET['dir']);*/
                 }
                 else
-                    echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_close.png" width="18px" height="18px" style="margin-left:15px;"/><a href="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/">'.$element->getName().'</a></span></div></div>';
+                    echo '<div class="row" data-element-type="folder">
+                            <div id="arbo">
+                                <span class="cell">
+                                    <img src="content/img/icon_dir_close.png" width="18px" height="18px" style="margin-left:15px;"/>
+                                    <span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/">
+                                    '.$element->getName().'
+                                    </span>
+                                </span>
+                            </div>
+                          </div>';
                 break;
         }
     };
-
+echo '</div>';//fin div container
 }
 
 
-function contenu($owner,$isOwner,$dir){
+function contenu($owner,$isOwner,$dir)
+{
     $elementManager = new ElementPdoManager();
     $refElementManager = new RefElementPdoManager();
 
     echo "<br />";
     echo "<br />";
+    echo "<!-- Contenu -->";
+    echo '<div class="col-md-9 contenu">';
 
     $elementList = $elementManager->returnElementsDetails($owner, $isOwner, $dir);
 
@@ -130,66 +238,119 @@ function contenu($owner,$isOwner,$dir){
         foreach($elementList as $element)
         {
 //        $element->setRefElement($refElementManager->findById($element->getRefElement()));
-        $codeElement = $element->getRefElement()->getCode();
+            $codeElement = $element->getRefElement()->getCode();
 
             switch($codeElement)
             {
                 case 4002:
                     if(isset($_GET['dir']))
-                        echo '<div id="'.$element->getName().'" data-element-type="folder"><div class="row"><div id="arbo"><span class="cell"><img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" /><a href="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">'.$element->getName().'</a></span></div></div></div>';
+                        echo '<div  onclick="selectFolder(this)" id="'.$element->getId().'" data-element-type="folder" name="'.$element->getName().'">
+                                <div class="row">
+                                    <div id="arbo">
+                                        <span class="cell">
+                                            <img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />
+                                            <span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">
+                                                '.$element->getName().'
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                             </div>';
                     else
-                        echo '<div id="'.$element->getName().'" data-element-type="folder"><div class="row"><div id="arbo"><span class="cell"><img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" /><a href="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/">'.$element->getName().'</a></span></div></div></div>';
+                        echo '<div  onclick="selectFolder(this)" id="'.$element->getId().'" data-element-type="folder" name="'.$element->getName().'">
+                                <div class="row">
+                                    <div id="arbo">
+                                        <span class="cell">
+                                            <img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />
+                                            <span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/">
+                                            '.$element->getName().'
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                              </div>';
                     break;
                 case 4003:
                     if(isset($_GET['dir']))
-                        echo '<div id="'.$element->getName().'" data-element-type="folder"><div class="row"><div id="arbo"><span class="cell"><img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" /><a href="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">'.$element->getName().'</a></span></div></div></div>';
+                        echo '<div  onclick="selectFolder(this)" id="'.$element->getId().'" data-element-type="folder" name="'.$element->getName().'">
+                                <div class="row">
+                                    <div id="arbo">
+                                        <span class="cell">
+                                            <img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />
+                                            <span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">
+                                            '.$element->getName().'
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                              </div>';
                     else
-                        echo '<div id="'.$element->getName().'" data-element-type="folder"><div class="row"><div id="arbo"><span class="cell"><img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" /><a href="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/">'.$element->getName().'</a></span></div></div></div>';
+                        echo '<div  onclick="selectFolder(this)" id="'.$element->getId().'" data-element-type="folder" name="'.$element->getName().'">
+                                <div class="row">
+                                    <div id="arbo">
+                                        <span class="cell">
+                                            <img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />
+                                            <span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/">
+                                            '.$element->getName().'
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+                              </div>';
                     break;
                 default:
-                    echo '<div id="'.$element->getName().'" data-element-type="file"><div class="row"><div id="arbo"><span class="cell"><img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />'.$element->getName().'</span></div></div></div>';
+                    echo '<div  onclick="selectFile(this)" id="'.$element->getId().'" data-element-type="file" name="'.$element->getName().'">
+                            <div class="row">
+                                <div id="arbo">
+                                    <span class="cell">
+                                        <img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />
+                                        '.$element->getName().'
+                                    </span>
+                                </div>
+                            </div>
+                          </div>';
 
             }
         };
     }
-
+    echo '</div>';
 }
 
-function under_arborescence($owner, $isOwner, $dir)
-{
-    $elementManager = new ElementPdoManager();
-    $refElementManager = new RefElementPdoManager();
-
-    //$criteria = array("idOwner" => $owner, "state" => (int)$state, "serverPath" => $dir);
-//    $elementList = $elementManager->find($criteria);
-//                    var_dump($elementList);
-    $elementList = $elementManager->returnElementsDetails($owner, $isOwner, $dir);
-
-    foreach($elementList as $element)
-    {
-        //$element->setRefElement($refElementManager->findById($element->getRefElement()));
-        $codeElement = $element->getRefElement()->getCode();
-        //var_dump($codeElement);
-        switch($codeElement)
-        {
-            case 4002:
-                echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_close.png" width="18px" height="18px" style="margin-left:30px;"/><a href="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">'.$element->getName().'</a></span></div></div>';
-                break;
-            case 4003:
-                echo $element->getName();
-                echo $_GET['dir'];
-                echo $dir;
-                if(isset ($_GET['dir']) && (preg_match('#'.$element->getName().'/#', '#'.$_GET['dir'].'/#')))
-                {
-                    echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_open.png" width="18px" height="18px" style="margin-left:30px;"/><a href="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">'.$element->getName().'</a></span></div></div>';
-                    under_arborescence($owner, $isOwner, $_GET['dir']);
-                }
-                else
-                    echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_close.png" width="18px" height="18px" style="margin-left:30px;"/><a href="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">'.$element->getName().'</a></span></div></div>';
-                break;
-        }
-    };
-}
+//function under_arborescence($owner, $isOwner, $dir)
+//{
+//    $elementManager = new ElementPdoManager();
+//    $refElementManager = new RefElementPdoManager();
+//
+//    //$criteria = array("idOwner" => $owner, "state" => (int)$state, "serverPath" => $dir);
+////    $elementList = $elementManager->find($criteria);
+////                    var_dump($elementList);
+//    $elementList = $elementManager->returnElementsDetails($owner, $isOwner, $dir);
+//
+//    foreach($elementList as $element)
+//    {
+//        //$element->setRefElement($refElementManager->findById($element->getRefElement()));
+//        $codeElement = $element->getRefElement()->getCode();
+//        //var_dump($codeElement);
+//        switch($codeElement)
+//        {
+//            case 4002:
+//                echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_close.png" width="18px" height="18px" style="margin-left:30px;"/><a href="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">'.$element->getName().'</a></span></div></div>';
+//                break;
+//            case 4003:
+////                echo $element->getName();
+////                echo $_GET['dir'];
+////                echo $dir;
+//                if(isset ($_GET['dir']) && (preg_match('#'.$element->getName().'/#', '#'.$_GET['dir'].'/#')))
+//                {
+//                    echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_open.png" width="18px" height="18px" style="margin-left:30px;"/><a href="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">'.$element->getName().'</a></span></div></div>';
+//                    under_arborescence($owner, $isOwner, $_GET['dir']);
+//                }
+//                else
+//                    echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_close.png" width="18px" height="18px" style="margin-left:30px;"/><a href="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">'.$element->getName().'</a></span></div></div>';
+//                break;
+//        }
+//    };
+//}
 
 
 // retourne la taille du fichier
@@ -248,99 +409,6 @@ function fileSize64($file)
 
 
 
-// fonction de création de dossier
-function createNewFolder($name, $dir){
-
-    /** Gestion bdd **/
-
-    // récupère le nom du dossier ou l'on se trouve
-    if($dir == "/")
-        $directoryCurrent = $dir;
-    else
-    {
-        $explode = explode("/", $dir);
-        $directoryCurrent = $explode[sizeof($explode)-2];
-    }
-    // traitement pour avoir l'équivalent du serverPath afin de gérer les dossiers vides/non vides
-    $pattern = "#".$directoryCurrent."/#";
-    $path = preg_replace($pattern, "", $dir);
-
-    $elementManager = new ElementPdoManager();
-    $refElementManager = new RefElementPdoManager();
-
-    // test si il n'existe pas déjà un dossier du même nom
-    if($name !== "")
-    {
-        $element = $elementManager->findOne(array("name" => $name, "idOwner" => new MongoId("536749adedb5025416000029"), "serverPath" => $dir, "state" => 1));
-
-
-        if(is_array($element) && array_key_exists('error', $element))
-        {
-            // récupère l'id des refElements directory empty et directory not empty
-            // Not Empty
-            $refElementNotEmpty = $refElementManager->findOne(array("description" => "Directory File (not empty)"));
-            $idNotEmptyFolder = $refElementNotEmpty->getId();
-
-            // Empty
-            $refElementEmpty = $refElementManager->findOne(array("description" => "Directory File (empty)"));
-            $idEmptyFolder = $refElementEmpty->getId();
-
-            // on créer le dossier
-            $criteria = array("state" => 1, "name" => $name, "idOwner" => new MongoId("536749adedb5025416000029"), "idRefElement" => new MongoId($idEmptyFolder), "size" => null, "serverPath" => $dir, "hash" => "azeaze", "downloadLink" => null);
-            $elementManager->create($criteria);
-
-            // passage du dossier courant à not empty si le create a marché
-            $searchQuery = array('name' => $directoryCurrent, 'idOwner' => new MongoId("536749adedb5025416000029"), 'state' => 1, 'serverPath' => $path);
-            $updateCriteria = array(
-                '$set' => array('idRefElement' => new MongoId($idNotEmptyFolder))
-            );
-            $options = array('new' => true );
-            $elementManager->findAndModify($searchQuery, $updateCriteria, $options);
-
-            /** Gestion serveur de fichiers **/
-            $newFolderPath = $dir.$name;
-    //        mkdir($newFolderPath, 0777); // à voir pour les permissions <------------- <-------------
-
-            header('Location: /Nestbox');
-        }
-        else
-        {
-            echo '<script>alert("Sorry, there is already a folder with this name in this directory. Please enter an other name.");</script>';
-        }
-    }
-    else
-    {
-            echo '<script>alert("Sorry, please enter a name for the new folder");</script>';
-        }
-}
-
-//fonction de suppression d'élément
-function deleteElement($name, $dir)
-{
-    $elementManager = new ElementPdoManager();
-    $refElementManager = new RefElementPdoManager();
-
-    $searchQuery = array('name' => $name, 'idOwner' => new MongoId("536749adedb5025416000029"), 'state' => 1, 'serverPath' => $dir);
-    $updateCriteria = array(
-        '$set' => array('state' => 0)
-    );
-    $options = array('new' => true );
-    $elementManager->findAndModify($searchQuery, $updateCriteria, $options);
-
-    if($dir == "/")
-        $regex = new MongoRegex('/^/'.$name.'/*$/');
-    else
-        $regex = new MongoRegex('/^'.$dir.$name.'/');
-
-    $searchQuery1 = array('serverPath' => $regex);
-    $updateCriteria1 = array(
-        '$set' => array('state' => 0)
-    );
-    $elementManager->findAndModify($searchQuery1, $updateCriteria1, $options);
-
-    header('Location: /Nestbox');
-
-}
 
 /**
  * Convertit des kilobytes (unité enregistrée en BDD) dans l'unité voulue).
@@ -355,28 +423,59 @@ function deleteElement($name, $dir)
 
 function convertKilobytes($kiloBytes, $outputUnit = NULL, $format = NULL)
 {
-    $kiloBytes = $kiloBytes * 1024; //transforme en bytes
+$bytes = $kiloBytes * 1024; //transforme en bytes
 
-    // Format string
-    $format = ($format === NULL) ? '%01.2f %s' : (string) $format;
+// Format string
+$format = ($format === NULL) ? '%01.2f' : (string) $format;
 
-    $units = array('B', 'MB', 'GB', 'TB', 'PB');
-    $mod = 1000;
+$units = array('B', 'KB', 'MB', 'GB', 'TB', 'PB');
+$mod = 1024;
 
-    /*
-     * Déterminer l'unité à utiliser
-     * http://php.net/manual/en/function.array-search.php
-     */
-    if (($power = array_search((string) $outputUnit, $units)) === FALSE)
+/*
+ * Déterminer l'unité à utiliser
+ * http://php.net/manual/en/function.array-search.php
+ */
+if (($power = array_search((string) $outputUnit, $units)) === FALSE)
+{
+    //http://php.net/manual/en/function.floor.php
+    $power = ($bytes > 0) ? floor(log($bytes, $mod)) : 0;
+}
+
+/*
+ * http://php.net/manual/en/function.sprintf.php
+ * http://php.net/manual/en/function.pow.php
+ */
+return sprintf($format, $bytes / pow($mod, $power), $units[$power]);
+}
+
+/**
+ * Récupère le gravatar correspondant en fonction de l'adresse mail.
+ *
+ * @author Kentucky Sato
+ * @param string $email=> l'adresse mail
+ * @param string $size=> Taille en pixel, valeur par defaut à 80px [ 1 - 2048 ]
+ * @param string $default=> Image par defaut [ 404 | mm | identicon | monsterid | wavatar ]
+ * @param string $rating=> Note Maximum [ g | pg | r | x ]
+ * @param boole $img=> True => retourne l'image complete, False=> retourne l'URL
+ * @param array $atts=> Optionnel, Attribut pour l'inclusion d' tag img
+ * @return Chaîne contenant seulement une URL ou un tag d'image complète
+ * @source http://gravatar.com/site/implement/images/php/
+ */
+
+function getGravatar($email, $size = 60, $default = 'mm', $rating = 'g', $img = false, $atts = array())
+{
+    $url = 'http://www.gravatar.com/avatar/';
+    $url.= md5( strtolower( trim( $email ) ) );//http://www.php.net/manual/en/function.strtolower.php
+    $url.= "?s=$size&d=$default&r=$rating";
+
+    if ( $img )
     {
-        //http://php.net/manual/en/function.floor.php
-        $power = ($kiloBytes > 0) ? floor(log($kiloBytes, $mod)) : 0;
+        $url = '<img src="' . $url . '"';
+        foreach ( $atts as $key => $val )
+            $url .= ' ' . $key . '="' . $val . '"';
+        $url .= ' />';
     }
 
-    /*
-     * http://php.net/manual/en/function.sprintf.php
-     * http://php.net/manual/en/function.pow.php
-     */
-    return sprintf($format, $kiloBytes / pow($mod, $power), $units[$power]);
+    return $url;
 }
 ?>
