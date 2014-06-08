@@ -231,17 +231,17 @@ function copyRights($sourceElementList, $pastedElementList)
 }
 
 /**
- * Supprime les droits appliqués à chaque élément d'une liste d'éléments
+ * Désactive les droits appliqués à chaque élément d'une liste d'éléments
  * @author Alban Truc
  * @param array $elementList
  * @since 08/06/2014
  */
 
-function removeRights($elementList)
+function disableRights($elementList)
 {
     //si on voulait log
-    //$removedRights = array();
-    //$failedToRemove = array();
+    //$disabledRights = array();
+    //$failedToDisable = array();
     //$count = 0
     $rightPdoManager = new RightPdoManager();
 
@@ -249,21 +249,27 @@ function removeRights($elementList)
         'state' => (int) 1,
     );
 
+    $rightUpdate = array(
+      '$set' => array( 'state' => (int) 0)
+    );
+
+    $options = array('multiple' => true);
+
     foreach($elementList as $element)
     {
         $rightCriteria['idElement'] = $element->getId();
 
-        $removeResult = $rightPdoManager->remove($rightCriteria);
+        $disableResult = $rightPdoManager->update($rightCriteria, $rightUpdate, $options);
 
         /*
         //si on voulait log
-        if(!(is_bool($removeResult)))
+        if(!(is_bool($disableResult)))
         {
-            $failedToRemove[$count]['rightCriteria'] = $rightCriteria;
-            $failedToRemove[$count]['error'] = $removeResult['error'];
+            $failedToDisable[$count]['rightCriteria'] = $rightCriteria;
+            $failedToDisable[$count]['error'] = $disableResult['error'];
             $count++;
         }
-        else $removedRights[] = $element->getId(); //liste des id d'éléments dont on a supprimé les droits
+        else $disabledRights[] = $element->getId(); //liste des id d'éléments dont on a désactivé les droits
         */
     }
 }
@@ -1142,7 +1148,7 @@ function moveHandler($idElement, $idUser, $path, $options = array())
                                 updateFolderStatus($path);
 
                                 if(array_key_exists('keepRights', $options) && $options['keepRights'] == FALSE)
-                                    removeRights($impactedElements);
+                                    disableRights($impactedElements);
 
                                 //@todo déplacement sur le serveur de fichier
 

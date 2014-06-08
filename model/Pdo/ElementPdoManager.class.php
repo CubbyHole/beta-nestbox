@@ -303,6 +303,10 @@ class ElementPdoManager extends AbstractPdoManager implements ElementManagerInte
         if($criteria instanceof Element)
             $criteria = $this->dismount($criteria);
 
+        //Transforme $criteria en array s'il contient un objet
+        if($update instanceof Element)
+            $update = $this->dismount($update);
+
         if(isset($criteria['idOwner']))
         {
             if($criteria['idOwner'] instanceof User)
