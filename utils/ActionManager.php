@@ -225,6 +225,45 @@ function copyRights($sourceElementList, $pastedElementList)
             $failedToPaste[$count]['error'] = $insertResult['error'];
             $count++;
         }
+        else $pastedRight[] = $rightCopy;
+        */
+    }
+}
+
+/**
+ * Supprime les droits appliqués à chaque élément d'une liste d'éléments
+ * @author Alban Truc
+ * @param array $elementList
+ * @since 08/06/2014
+ */
+
+function removeRights($elementList)
+{
+    //si on voulait log
+    //$removedRights = array();
+    //$failedToRemove = array();
+    //$count = 0
+    $rightPdoManager = new RightPdoManager();
+
+    $rightCriteria = array(
+        'state' => (int) 1,
+    );
+
+    foreach($elementList as $element)
+    {
+        $rightCriteria['idElement'] = $element->getId();
+
+        $removeResult = $rightPdoManager->remove($rightCriteria);
+
+        /*
+        //si on voulait log
+        if(!(is_bool($removeResult)))
+        {
+            $failedToRemove[$count]['rightCriteria'] = $rightCriteria;
+            $failedToRemove[$count]['error'] = $removeResult['error'];
+            $count++;
+        }
+        else $removedRights[] = $element->getId(); //liste des id d'éléments dont on a supprimé les droits
         */
     }
 }
@@ -587,12 +626,13 @@ function disableHandler($idElement, $idUser, $returnImpactedElements = FALSE)
  * - returnImpactedElements pour retourner les éléments à copier
  * - returnPastedElements pour retourner les éléments copiés (ceux présent dans la destination), échec et succès
  * - keepRights pour également copier les droits des éléments sources
- * On peut se retrouver avec cette structure:
+ * On peut se retrouver avec la structure de retour suivante:
  *  array(
+ *          'operationSuccess' => true ou false
  *          'error' => 'message d'erreur',
  *          'impactedElements' => array(),
  *          'pastedElements' => array(),
- *          'failedToPaste' => array())
+ *          'failedToPaste' => array()
  *       )
  * @author Alban Truc & Harry Bellod
  * @param string|MongoId $idElement
@@ -835,6 +875,7 @@ function copyHandler($idElement, $idUser, $path, $options = array())
     else return prepareCopyReturn($options, $operationSuccess, $hasRight, $impactedElements, $pastedElements, $failedToPaste);
 }
 
+
 function renameHandler($idElement, $idUser, $name)
 {
     $idElement = new MongoId($idElement);
@@ -919,6 +960,31 @@ function prepareMoveReturn($options, $operationSuccess, $error, $elementsImpacte
     return $return;
 }
 
+/**
+ * Déplace l'élément (et ce qu'il contient dans le cas d'un dossier) dans la destination indiquée.
+ * $options est un tableau de booléens avec comme indexes possibles:
+ * - returnImpactedElements à true pour retourner les éléments à déplacer
+ * - returnMovedElements à true pour retourner les éléments déplacés
+ * - keepRights à false pour ne pas conserver les droits sur les éléments
+ * - keepDownloadLinks à false pour ne pas conserver les liens de téléchargement
+ * On peut se retrouver avec la structure de retour suivante:
+ *  array(
+ *          'operationSuccess' => true ou false,
+ *          'error' => 'message d'erreur',
+ *          'impactedElements' => array(),
+ *          'movedElements' => array(),
+ *          'failedToMove' => array()
+ *  )
+ * @author Alban Truc
+ * @param string|MongoId $idElement
+ * @param string|MongoId $idUser
+ * @param string $path
+ * @param array $options
+ * @since 08/06/2014
+ * @return array
+ * @todo mêmes améliorations que pour la fonction copyHandler
+ */
+
 function moveHandler($idElement, $idUser, $path, $options = array())
 {
     $idElement = new MongoId($idElement);
@@ -982,16 +1048,16 @@ function moveHandler($idElement, $idUser, $path, $options = array())
                         $idDestinationFolder = $elementPdoManager->findOne($elementCriteria, array('_id' => TRUE));
 
                         if((array_key_exists('error', $idDestinationFolder)))
-                            return prepareCopyReturn($options, $operationSuccess, $idDestinationFolder, $impactedElements, $movedElements, $failedToMove);
+                            return prepareMoveReturn($options, $operationSuccess, $idDestinationFolder, $impactedElements, $movedElements, $failedToMove);
                         else
                         {
                             //vérification des droits dans la destination
                             $hasRightOnDestination = actionAllowed($idDestinationFolder['_id'], $idUser, array('11'));
 
                             if(is_array($hasRightOnDestination) && array_key_exists('error', $hasRightOnDestination))
-                                return prepareCopyReturn($options, $operationSuccess, $hasRightOnDestination, $impactedElements, $movedElements, $failedToMove);
+                                return prepareMoveReturn($options, $operationSuccess, $hasRightOnDestination, $impactedElements, $movedElements, $failedToMove);
                             elseif($hasRightOnDestination == FALSE)
-                                return prepareCopyReturn($options, $operationSuccess, array('error' => 'Access denied in destination'), $impactedElements, $movedElements, $failedToMove);
+                                return prepareMoveReturn($options, $operationSuccess, array('error' => 'Access denied in destination'), $impactedElements, $movedElements, $failedToMove);
                         }
                     }
 
@@ -1075,25 +1141,25 @@ function moveHandler($idElement, $idUser, $path, $options = array())
                                  */
                                 updateFolderStatus($path);
 
-                                if(array_key_exists('keepRights', $options) && $options['keepRights'] == TRUE)
-                                    copyRights($impactedElements, $movedElements);
+                                if(array_key_exists('keepRights', $options) && $options['keepRights'] == FALSE)
+                                    removeRights($impactedElements);
 
                                 //@todo déplacement sur le serveur de fichier
 
                                 $operationSuccess = TRUE;
 
-                                return prepareCopyReturn($options, $operationSuccess, array(), $impactedElements, $movedElements, $failedToMove);
+                                return prepareMoveReturn($options, $operationSuccess, array(), $impactedElements, $movedElements, $failedToMove);
 
                         }
-                        else return prepareCopyReturn($options, $operationSuccess, $isElementAFolder, $impactedElements, $movedElements, $failedToMove);
+                        else return prepareMoveReturn($options, $operationSuccess, $isElementAFolder, $impactedElements, $movedElements, $failedToMove);
                     }
-                    else return prepareCopyReturn($options, $operationSuccess, $elementNameInDestination, $impactedElements, $movedElements, $failedToMove);
+                    else return prepareMoveReturn($options, $operationSuccess, $elementNameInDestination, $impactedElements, $movedElements, $failedToMove);
                 }
-                else return prepareCopyReturn($options, $operationSuccess, array('error' => 'Element inactivated, nothing to do'), $impactedElements, $movedElements, $failedToMove);
+                else return prepareMoveReturn($options, $operationSuccess, array('error' => 'Element inactivated, nothing to do'), $impactedElements, $movedElements, $failedToMove);
             }
-            else return prepareCopyReturn($options, $operationSuccess, $element, $impactedElements, $movedElements, $failedToMove);
+            else return prepareMoveReturn($options, $operationSuccess, $element, $impactedElements, $movedElements, $failedToMove);
         }
-        else return prepareCopyReturn($options, $operationSuccess, array('error' => 'Access denied'), $impactedElements, $movedElements, $failedToMove);
+        else return prepareMoveReturn($options, $operationSuccess, array('error' => 'Access denied'), $impactedElements, $movedElements, $failedToMove);
     }
-    else return prepareCopyReturn($options, $operationSuccess, $hasRight, $impactedElements, $movedElements, $failedToMove);
+    else return prepareMoveReturn($options, $operationSuccess, $hasRight, $impactedElements, $movedElements, $failedToMove);
 }
