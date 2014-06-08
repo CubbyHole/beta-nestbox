@@ -9,6 +9,8 @@
 $projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Nestbox';
 require_once $projectRoot.'/required.php';
 
+//@todo vérifier dans la collection refAction que l'action est autorisée
+
 /**
  * vérifier si l'utilisateur a les droits nécessaires, c'est-à-dire si l'utilisateur est propriétaire
  *  ou le droit nécessaire est présent en base.
@@ -358,7 +360,7 @@ function avoidNameCollision($path, $element)
  * @author Alban Truc
  * @param array $options
  * @param bool $operationSuccess
- * @param array $error
+ * @param string|array $error
  * @param array $elementsImpacted
  * @param array $pastedElements
  * @param array $failedToPaste
@@ -372,8 +374,10 @@ function prepareCopyReturn($options, $operationSuccess, $error, $elementsImpacte
 
     $return['operationSuccess'] = $operationSuccess;
 
-    if(array_key_exists('error', $error))
+    if(is_array($error) && array_key_exists('error', $error))
         $return['error'] = $error['error'];
+    else
+        $return['error'] = $error;
 
     if(is_array($options))
     {
@@ -866,10 +870,65 @@ function renameHandler($idElement, $idUser, $name)
     else return $hasRight;
 }
 
+/**
+ * Prépare le retour de la fonction moveHandler
+ * @author Alban Truc
+ * @param array $options
+ * @param bool $operationSuccess
+ * @param string|array $error
+ * @param array $elementsImpacted
+ * @param array $movedElements
+ * @param array $failedToMove
+ * @return array
+ */
+
+function prepareMoveReturn($options, $operationSuccess, $error, $elementsImpacted, $movedElements, $failedToMove)
+{
+    $return = array();
+
+    $return['operationSuccess'] = $operationSuccess;
+
+    if(is_array($error) && array_key_exists('error', $error))
+        $return['error'] = $error['error'];
+    else
+        $return['error'] = $error;
+
+    if(is_array($options))
+    {
+        if(array_key_exists('returnImpactedElements', $options) && $options['returnImpactedElements'] == TRUE)
+        {
+            if(empty($elementsImpacted))
+                $return['elementsImpacted'] = 'No impacted element or the function had an error before the element(s) got retrieved.';
+            else
+                $return['elementsImpacted'] = $elementsImpacted;
+        }
+
+        if(array_key_exists('returnMovedElements', $options) && $options['returnMovedElements'] == TRUE)
+        {
+            if(empty($movedElements))
+                $return['movedElements'] = 'No moved element or the function had an error before trying to.';
+            else
+                $return['movedElements'] = $movedElements;
+
+            if(empty($failedToMove))
+                $return['failedToMove'] = 'No fail or the function had an error before trying to.';
+            else
+                $return['failedToMove'] = $failedToMove;
+        }
+    }
+    return $return;
+}
+
 function moveHandler($idElement, $idUser, $path, $options = array())
 {
     $idElement = new MongoId($idElement);
     $idUser = new MongoId($idUser);
+
+    $impactedElements = array();
+    $movedElements = array();
+    $failedToMove = array();
+
+    $operationSuccess = FALSE;
 
     /*
      * 11 correspond au droit de lecture et écriture.
@@ -891,53 +950,150 @@ function moveHandler($idElement, $idUser, $path, $options = array())
             {
                 if($element->getState() == 1)
                 {
-                    //var_dump($element->getName());
-                    //var_dump($element->getServerPath());
-                    /*
-                     * extraction de l'emplacement du dossier de destination à partir de $path
-                     * @see http://www.php.net/manual/en/function.implode.php
-                     * @see http://www.php.net/manual/en/function.explode.php
-                     */
-                    $destinationFolderPath = implode('/', explode('/', $path, -2)).'/';
-
-                    /*
-                     * extraction du nom du dossier de destination à partir du $path
-                     * @see http://www.php.net/manual/en/function.array-slice.php
-                     */
-                    $destinationFolderName = implode(array_slice(explode('/', $path), -2, 1));
-
-                    //récupération de l'id de l'élément en base correspondant au dossier de destination
-                    $elementCriteria = array(
-                        'state' => (int)1,
-                        'name' => $destinationFolderName,
-                        'serverPath' => $destinationFolderPath
-                    );
-
-                    $idDestinationFolder = $elementPdoManager->findOne($elementCriteria, array('_id' => TRUE));
-
-                    if(!(array_key_exists('error', $idDestinationFolder)))
+                    if($path != $element->getServerPath())
                     {
-                        //vérification des droits dans la destination
-                        $hasRightOnDestination = actionAllowed($idDestinationFolder['_id'], $idUser, array('11'));
+                        $elementCriteria = array(
+                            'state' => (int)1,
+                        );
 
-                        if(!(is_array($hasRightOnDestination)))
+                        /*
+                         * extraction de l'emplacement du dossier de destination à partir de $path
+                         * @see http://www.php.net/manual/en/function.implode.php
+                         * @see http://www.php.net/manual/en/function.explode.php
+                         */
+                        $destinationFolderPath = implode('/', explode('/', $path, -2)).'/';
+                        $elementCriteria['serverPath'] = $destinationFolderPath;
+
+                        /**
+                         * la racine n'ayant pas d'enregistrement pour elle même, on a un serverPath "/" mais de nom.
+                         * il faut donc distinguer les cas de copies d'un élément dans la racine des autres cas.
+                         */
+                        if($path != "/")
                         {
-                            if($hasRightOnDestination === TRUE)
-                            {
-                                $elementNameInDestination = avoidNameCollision($path, $element);
+                            /*
+                         * extraction du nom du dossier de destination à partir du $path
+                         * @see http://www.php.net/manual/en/function.array-slice.php
+                         */
+                            $destinationFolderName = implode(array_slice(explode('/', $path), -2, 1));
+                            $elementCriteria['name'] = $destinationFolderName;
+                        }
 
-                                if(is_string($elementNameInDestination))
-                                {
+                        //récupération de l'id de l'élément en base correspondant au dossier de destination
+                        $idDestinationFolder = $elementPdoManager->findOne($elementCriteria, array('_id' => TRUE));
 
-                                }
-                            }
+                        if((array_key_exists('error', $idDestinationFolder)))
+                            return prepareCopyReturn($options, $operationSuccess, $idDestinationFolder, $impactedElements, $movedElements, $failedToMove);
+                        else
+                        {
+                            //vérification des droits dans la destination
+                            $hasRightOnDestination = actionAllowed($idDestinationFolder['_id'], $idUser, array('11'));
+
+                            if(is_array($hasRightOnDestination) && array_key_exists('error', $hasRightOnDestination))
+                                return prepareCopyReturn($options, $operationSuccess, $hasRightOnDestination, $impactedElements, $movedElements, $failedToMove);
+                            elseif($hasRightOnDestination == FALSE)
+                                return prepareCopyReturn($options, $operationSuccess, array('error' => 'Access denied in destination'), $impactedElements, $movedElements, $failedToMove);
                         }
                     }
-                }
-            }
 
+                    $elementNameInDestination = avoidNameCollision($path, $element);
+
+                    if(is_string($elementNameInDestination))
+                    {
+                        $isElementAFolder = isFolder($element->getRefElement());
+
+                        if(!(is_array($isElementAFolder))) //pas d'erreur
+                        {
+                            if($isElementAFolder == TRUE) //l'élément est un dossier
+                            {
+                                $serverPath = $element->getServerPath().$element->getName().'/';
+
+                                //récupération des éléments contenus dans le dossier
+                                $seekElementsInFolder = array(
+                                    'state' => (int)1,
+                                    'serverPath' => new MongoRegex("/^$serverPath/i")
+                                );
+
+                                $elementsInFolder = $elementPdoManager->find($seekElementsInFolder);
+                            }
+
+
+                            if(isset($elementsInFolder) && !(array_key_exists('error', $elementsInFolder)))
+                                $impactedElements = $elementsInFolder;
+
+
+                            $impactedElements[] = $element;
+
+                                $count = 0;
+
+                                foreach($impactedElements as $key => $impactedElement)
+                                {
+                                    $updateCriteria = array(
+                                        '_id' => $impactedElement->getId(),
+                                        'state' => (int)1
+                                    );
+                                    //préparation de la copie
+                                    $elementCopy = clone $impactedElement;
+
+                                    if(count($impactedElements) != $key+1)
+                                    {$explode = explode($serverPath, $elementCopy->getServerPath());
+                                        if(isset($explode[1]) && $explode[1] != '')
+                                        {
+                                            $elementPath = $path.$elementNameInDestination.'/'.$explode[1];
+                                            $elementCopy->setServerPath($elementPath);
+                                        }
+                                        else
+                                            $elementCopy->setServerPath($path.$elementNameInDestination.'/');
+                                    }
+                                    else
+                                    {
+                                        $elementCopy->setName($elementNameInDestination);
+                                        $elementCopy->setServerPath($path);
+                                    }
+
+                                    if(array_key_exists('keepDownloadLinks', $options) && $options['keepDownloadLinks'] == FALSE)
+                                        $elementCopy->setDownloadLink('');
+
+                                    //mise à jour
+                                    $updateResult = $elementPdoManager->update($updateCriteria, $elementCopy);
+
+                                    //gestion des erreurs
+
+                                    if(!(is_bool($updateResult))) //erreur
+                                    {
+                                        $failedToPaste[$count]['elementToMove'] = $impactedElement;
+                                        $failedToPaste[$count]['elementMoved'] = $elementCopy;
+                                        $failedToPaste[$count]['error'] = $updateResult['error'];
+                                        $count++;
+                                    }
+                                    elseif($updateResult == TRUE)
+                                        $movedElements[] = $elementCopy;
+                                }
+
+                                /*
+                                 * Si le déplacement vide un dossier ou rempli un dossier qui était vide,
+                                 * on met à jour son refElement
+                                 */
+                                updateFolderStatus($path);
+
+                                if(array_key_exists('keepRights', $options) && $options['keepRights'] == TRUE)
+                                    copyRights($impactedElements, $movedElements);
+
+                                //@todo déplacement sur le serveur de fichier
+
+                                $operationSuccess = TRUE;
+
+                                return prepareCopyReturn($options, $operationSuccess, array(), $impactedElements, $movedElements, $failedToMove);
+
+                        }
+                        else return prepareCopyReturn($options, $operationSuccess, $isElementAFolder, $impactedElements, $movedElements, $failedToMove);
+                    }
+                    else return prepareCopyReturn($options, $operationSuccess, $elementNameInDestination, $impactedElements, $movedElements, $failedToMove);
+                }
+                else return prepareCopyReturn($options, $operationSuccess, array('error' => 'Element inactivated, nothing to do'), $impactedElements, $movedElements, $failedToMove);
+            }
+            else return prepareCopyReturn($options, $operationSuccess, $element, $impactedElements, $movedElements, $failedToMove);
         }
-        else return array('error' => 'Access denied');
+        else return prepareCopyReturn($options, $operationSuccess, array('error' => 'Access denied'), $impactedElements, $movedElements, $failedToMove);
     }
-    else return $hasRight;
+    else return prepareCopyReturn($options, $operationSuccess, $hasRight, $impactedElements, $movedElements, $failedToMove);
 }
