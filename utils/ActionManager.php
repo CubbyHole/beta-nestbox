@@ -85,12 +85,15 @@ function isFolder($refElementId)
  * permet également de modifier le statut d'un dossier à notempty après une copie dans le dit dossier
  * @author Harry Bellod
  * @param string $serverPath (de l'élément disable ou du dossier ou l'on copie)
+ * @param string|MongoId $idOwner
  * @since 07/06/2014
  * @return bool|true si update ok
  */
 
-function updateFolderStatus($serverPath)
+function updateFolderStatus($serverPath, $idOwner)
 {
+    $idOwner = new MongoId($idOwner);
+
     $elementPdoManager = new ElementPdoManager();
     $refElementPdoManager = new RefElementPdoManager();
 
@@ -134,14 +137,18 @@ function updateFolderStatus($serverPath)
             $path = preg_replace($pattern, "", $serverPath,1);
 
             // on réalise un update sur le dossier en question pour modifier son refElement (à Directory File Empty)
-            $criteria = array('name' => $directoryCurrent, 'serverPath' => $path, 'state' => 1);
+            $criteria = array(
+                'name' => $directoryCurrent,
+                'serverPath' => $path,
+                'state' => 1,
+                'idOwner' => $idOwner
+            );
             $update = array(
                 '$set' => array('idRefElement' => $idRefElement)
             );
             return $elementPdoManager->update($criteria, $update);
     }
     return true; //rien à faire
-
 }
 
 /**
@@ -280,124 +287,124 @@ function disableRights($elementList)
  * effectivement un fichier). On ne peut donc pas avoir dans un même emplacement un fichier test.flac et test.mp3.
  * @author Alban Truc
  * @param string $path
- * @param Element $element
+ * @param string $elementName
+ * @param string|MongoId $idOwner
  * @since 07/06/2014
  * @return array|Element[]|string
  */
 
-function avoidNameCollision($path, $element)
+function avoidNameCollision($path, $elementName, $idOwner)
 {
-    if($element instanceof Element)
-    {
-        $elementPdoManager = new ElementPdoManager();
+    $elementPdoManager = new ElementPdoManager();
 
-        //un élément avec le même nom n'est-il pas déjà présent?
-        $seekForNameDuplicate = array(
+    $idOwner = new MongoId($idOwner);
+
+    //un élément avec le même nom n'est-il pas déjà présent?
+    $seekForNameDuplicate = array(
+        'state' => (int)1,
+        'serverPath' => $path,
+        'name' => $elementName,
+        'idOwner' => $idOwner
+    );
+//    return var_dump($seekForNameDuplicate);
+    $elementsWithSameName = $elementPdoManager->find($seekForNameDuplicate);
+    //var_dump($elementsWithSameName);
+
+    if(array_key_exists('error', $elementsWithSameName))
+    {
+        //cas no match found => pas d'élément avec le même nom à l'emplacement de destination
+        if($elementsWithSameName['error'] == 'No match found.')
+        {
+            $elementNameInDestination = $elementName;
+        }
+        else return $elementsWithSameName;
+    }
+    else //nom déjà utilisé
+    {
+        //existe-t-il déjà des copies?
+        $seekForCopies = array(
             'state' => (int)1,
             'serverPath' => $path,
-            'name' => $element->getName()
+            'name' => new MongoRegex("/^".$elementName." - Copy/i"),
+            'idOwner' => $idOwner
         );
 
-        $elementsWithSameName = $elementPdoManager->find($seekForNameDuplicate);
-        //var_dump($elementsWithSameName);
+        $duplicate = $elementPdoManager->find($seekForCopies, array('name' => TRUE, '_id' => FALSE));
+        //var_dump($duplicate);
 
-        if(array_key_exists('error', $elementsWithSameName))
+        if(array_key_exists('error', $duplicate))
         {
-            //cas no match found => pas d'élément avec le même nom à l'emplacement de destination
-            if($elementsWithSameName['error'] == 'No match found.')
+            //cas où il n'y a pas de copie
+            if($duplicate['error'] == 'No match found.')
             {
-                $elementNameInDestination = $element->getName();
+                $elementNameInDestination = $elementName.' - Copy';
             }
-            else return $elementsWithSameName;
+            else return $duplicate;
         }
-        else //nom déjà utilisé
+        else //une ou plusieurs copies ont été trouvées
         {
-            //existe-t-il déjà des copies?
-            $seekForCopies = array(
-                'state' => (int)1,
-                'serverPath' => $path,
-                'name' => new MongoRegex("/^".$element->getName()." - Copy/i")
-            );
+            /**
+             * actuellement nous avons un tableau de tableaux contenant les noms des duplicats.
+             * Exemple: array ( [0] => array ( ['name'] => 'duplicaName' ) )
+             * La manipulation suivante sert à enlever un "étage" pour obtenir par exemple
+             * array ( [0] => 'duplicataName' ).
+             * Nos environnements de développement ne disposant pas de PHP 5.5.0, nous ne pouvons
+             * utiliser pour cela la fonction array_column. En remplacement, nous appliquons une
+             * fonction via array_map.
+             * @see http://www.php.net/manual/en/function.array-column.php
+             * @see http://www.php.net/manual/en/function.array-map.php
+             */
 
-            $duplicate = $elementPdoManager->find($seekForCopies, array('name' => TRUE, '_id' => FALSE));
+            $f = function($array){return $array['name'];};
+            $duplicate = array_map($f, $duplicate);
             //var_dump($duplicate);
-
-            if(array_key_exists('error', $duplicate))
-            {
-                //cas où il n'y a pas de copie
-                if($duplicate['error'] == 'No match found.')
-                {
-                    $elementNameInDestination = $element->getName().' - Copy';
-                }
-                else return $duplicate;
-            }
-            else //une ou plusieurs copies ont été trouvées
+            //@see http://www.php.net/manual/en/function.in-array.php
+            if(!(in_array($elementName.' - Copy', $duplicate)))
+                $elementNameInDestination = $elementName.' - Copy';
+            else
             {
                 /**
-                 * actuellement nous avons un tableau de tableaux contenant les noms des duplicats.
-                 * Exemple: array ( [0] => array ( ['name'] => 'duplicaName' ) )
-                 * La manipulation suivante sert à enlever un "étage" pour obtenir par exemple
-                 * array ( [0] => 'duplicataName' ).
-                 * Nos environnements de développement ne disposant pas de PHP 5.5.0, nous ne pouvons
-                 * utiliser pour cela la fonction array_column. En remplacement, nous appliquons une
-                 * fonction via array_map.
-                 * @see http://www.php.net/manual/en/function.array-column.php
-                 * @see http://www.php.net/manual/en/function.array-map.php
+                 * @see http://www.php.net/manual/en/function.unset.php
+                 * @see http://www.php.net/manual/en/function.array-search.php
+                 * Supprime dans le tableau la valeur correspondant à
+                 * $element->getName().' - Copy' pour simplifier les opérations suivantes
+                 */
+                unset($duplicate[array_search($elementName.' - Copy', $duplicate)]);
+
+                //@see http://www.php.net/manual/en/function.sort.php cf. exemple #2
+                sort($duplicate, SORT_NATURAL | SORT_FLAG_CASE);
+                //var_dump($duplicate);
+
+                /*
+                 * déterminer quel nom du type elementName - Copy (number) est disponible,
+                 * avec number le plus proche possible de 0
                  */
 
-                $f = function($array){return $array['name'];};
-                $duplicate = array_map($f, $duplicate);
-                //var_dump($duplicate);
-                //@see http://www.php.net/manual/en/function.in-array.php
-                if(!(in_array($element->getName().' - Copy', $duplicate)))
-                    $elementNameInDestination = $element->getName().' - Copy';
-                else
+                //indexe pour le tableau duplicate
+                //$keyNumber = 0;
+
+                //Le "number" commence à 2
+                $copyNumberIndex = 2;
+                //var_dump($duplicate); exit();
+                if(!(empty($duplicate))) //Plus d'une copie
                 {
-                    /**
-                     * @see http://www.php.net/manual/en/function.unset.php
-                     * @see http://www.php.net/manual/en/function.array-search.php
-                     * Supprime dans le tableau la valeur correspondant à
-                     * $element->getName().' - Copy' pour simplifier les opérations suivantes
-                     */
-                    unset($duplicate[array_search($element->getName().' - Copy', $duplicate)]);
-
-                    //@see http://www.php.net/manual/en/function.sort.php cf. exemple #2
-                    sort($duplicate, SORT_NATURAL | SORT_FLAG_CASE);
-                    //var_dump($duplicate);
-
-                    /*
-                     * déterminer quel nom du type elementName - Copy (number) est disponible,
-                     * avec number le plus proche possible de 0
-                     */
-
-                    //indexe pour le tableau duplicate
-                    //$keyNumber = 0;
-
-                    //Le "number" commence à 2
-                    $copyNumberIndex = 2;
-                    //var_dump($duplicate); exit();
-                    if(!(empty($duplicate))) //Plus d'une copie
+                    $count = 0;
+                    while(isset($duplicate[$count]))
                     {
-                        $count = 0;
-                        while(isset($duplicate[$count]))
+                        if($duplicate[$count] == $elementName.' - Copy ('.$copyNumberIndex.')')
                         {
-                            if($duplicate[$count]==$element->getName().' - Copy ('.$copyNumberIndex.')')
-                            {
-                                $copyNumberIndex++;
-                            }
-                            $count++;
+                            $copyNumberIndex++;
                         }
+                        $count++;
                     }
-//                    var_dump($copyNumberIndex);
-                    $elementNameInDestination = $element->getName().' - Copy ('.$copyNumberIndex.')';
-//                    var_dump($elementNameInDestination); exit();
                 }
+//                    var_dump($copyNumberIndex);
+                $elementNameInDestination = $elementName.' - Copy ('.$copyNumberIndex.')';
+//                    var_dump($elementNameInDestination); exit();
             }
         }
-        return $elementNameInDestination;
     }
-    else
-        return array('error' => 'Object Element required');
+    return $elementNameInDestination;
 }
 
 /**
@@ -495,6 +502,7 @@ function disableHandler($idElement, $idUser, $returnImpactedElements = FALSE)
                             //notre criteria inclut tous les éléments se trouvant dans le dossier et ses dossiers enfants
                             $elementCriteria = array(
                                 'state' => (int) 1,
+                                'idOwner' => $idUser,
                                 '$or' => array(
                                     array('_id' => $idElement),
                                     array('serverPath' => new MongoRegex("/^$serverPath/i"))
@@ -537,7 +545,7 @@ function disableHandler($idElement, $idUser, $returnImpactedElements = FALSE)
                         {
                             if($elementUpdateResult === TRUE)
                             {
-                                $updateFolderStatus = updateFolderStatus($element->getServerPath());
+                                $updateFolderStatus = updateFolderStatus($element->getServerPath(), $idUser);
                                 if(is_bool($updateFolderStatus) && $updateFolderStatus === TRUE)
                                 {
                                     //séparation en deux tableaux
@@ -686,6 +694,7 @@ function copyHandler($idElement, $idUser, $path, $options = array())
                     {
                         $elementCriteria = array(
                             'state' => (int)1,
+                            'idOwner' => $idUser
                         );
 
                         /*
@@ -708,27 +717,27 @@ function copyHandler($idElement, $idUser, $path, $options = array())
                          */
                             $destinationFolderName = implode(array_slice(explode('/', $path), -2, 1));
                             $elementCriteria['name'] = $destinationFolderName;
-                        }
 
-                        //récupération de l'id de l'élément en base correspondant au dossier de destination
-                        $idDestinationFolder = $elementPdoManager->findOne($elementCriteria, array('_id' => TRUE));
+                            //récupération de l'id de l'élément en base correspondant au dossier de destination
+                            $idDestinationFolder = $elementPdoManager->findOne($elementCriteria, array('_id' => TRUE));
 
-                        if((array_key_exists('error', $idDestinationFolder)))
-                            return prepareCopyReturn($options, $operationSuccess, $idDestinationFolder, $impactedElements, $pastedElements, $failedToPaste);
-                        else
-                        {
-                            //vérification des droits dans la destination
-                            $hasRightOnDestination = actionAllowed($idDestinationFolder['_id'], $idUser, array('11'));
+                            if((array_key_exists('error', $idDestinationFolder)))
+                                return prepareCopyReturn($options, $operationSuccess, $idDestinationFolder, $impactedElements, $pastedElements, $failedToPaste);
+                            else
+                            {
+                                //vérification des droits dans la destination
+                                $hasRightOnDestination = actionAllowed($idDestinationFolder['_id'], $idUser, array('11'));
 
-                            if(is_array($hasRightOnDestination) && array_key_exists('error', $hasRightOnDestination))
-                                return prepareCopyReturn($options, $operationSuccess, $hasRightOnDestination, $impactedElements, $pastedElements, $failedToPaste);
-                            elseif($hasRightOnDestination == FALSE)
-                                return prepareCopyReturn($options, $operationSuccess, array('error' => 'Access denied in destination'), $impactedElements, $pastedElements, $failedToPaste);
+                                if(is_array($hasRightOnDestination) && array_key_exists('error', $hasRightOnDestination))
+                                    return prepareCopyReturn($options, $operationSuccess, $hasRightOnDestination, $impactedElements, $pastedElements, $failedToPaste);
+                                elseif($hasRightOnDestination == FALSE)
+                                    return prepareCopyReturn($options, $operationSuccess, array('error' => 'Access denied in destination'), $impactedElements, $pastedElements, $failedToPaste);
 
+                            }
                         }
                     }
 
-                    $elementNameInDestination = avoidNameCollision($path, $element);
+                    $elementNameInDestination = avoidNameCollision($path, $element->getName(), $idUser);
 
                     if(is_string($elementNameInDestination))
                     {
@@ -774,7 +783,8 @@ function copyHandler($idElement, $idUser, $path, $options = array())
                                 //récupération des éléments contenus dans le dossier
                                 $seekElementsInFolder = array(
                                     'state' => (int)1,
-                                    'serverPath' => new MongoRegex("/^$serverPath/i")
+                                    'serverPath' => new MongoRegex("/^$serverPath/i"),
+                                    'idOwner' => $idUser
                                 );
 
                                 $elementsInFolder = $elementPdoManager->find($seekElementsInFolder);
@@ -850,7 +860,7 @@ function copyHandler($idElement, $idUser, $path, $options = array())
                                 }
 
                                 // Lors de copie dans un dossier, on vérifie si le dossier était empty. Au quel cas on le passe à NotEmpty
-                                updateFolderStatus($path);
+                                updateFolderStatus($path, $idUser);
 
                                 if(array_key_exists('keepRights', $options) && $options['keepRights'] == TRUE)
                                     copyRights($impactedElements, $pastedElements);
@@ -1026,6 +1036,7 @@ function moveHandler($idElement, $idUser, $path, $options = array())
                     {
                         $elementCriteria = array(
                             'state' => (int)1,
+                            'idOwner' => $idUser
                         );
 
                         /*
@@ -1048,26 +1059,26 @@ function moveHandler($idElement, $idUser, $path, $options = array())
                          */
                             $destinationFolderName = implode(array_slice(explode('/', $path), -2, 1));
                             $elementCriteria['name'] = $destinationFolderName;
-                        }
 
-                        //récupération de l'id de l'élément en base correspondant au dossier de destination
-                        $idDestinationFolder = $elementPdoManager->findOne($elementCriteria, array('_id' => TRUE));
+                            //récupération de l'id de l'élément en base correspondant au dossier de destination
+                            $idDestinationFolder = $elementPdoManager->findOne($elementCriteria, array('_id' => TRUE));
 
-                        if((array_key_exists('error', $idDestinationFolder)))
-                            return prepareMoveReturn($options, $operationSuccess, $idDestinationFolder, $impactedElements, $movedElements, $failedToMove);
-                        else
-                        {
-                            //vérification des droits dans la destination
-                            $hasRightOnDestination = actionAllowed($idDestinationFolder['_id'], $idUser, array('11'));
+                            if((array_key_exists('error', $idDestinationFolder)))
+                                return prepareMoveReturn($options, $operationSuccess, $idDestinationFolder, $impactedElements, $movedElements, $failedToMove);
+                            else
+                            {
+                                //vérification des droits dans la destination
+                                $hasRightOnDestination = actionAllowed($idDestinationFolder['_id'], $idUser, array('11'));
 
-                            if(is_array($hasRightOnDestination) && array_key_exists('error', $hasRightOnDestination))
-                                return prepareMoveReturn($options, $operationSuccess, $hasRightOnDestination, $impactedElements, $movedElements, $failedToMove);
-                            elseif($hasRightOnDestination == FALSE)
-                                return prepareMoveReturn($options, $operationSuccess, array('error' => 'Access denied in destination'), $impactedElements, $movedElements, $failedToMove);
+                                if(is_array($hasRightOnDestination) && array_key_exists('error', $hasRightOnDestination))
+                                    return prepareMoveReturn($options, $operationSuccess, $hasRightOnDestination, $impactedElements, $movedElements, $failedToMove);
+                                elseif($hasRightOnDestination == FALSE)
+                                    return prepareMoveReturn($options, $operationSuccess, array('error' => 'Access denied in destination'), $impactedElements, $movedElements, $failedToMove);
+                            }
                         }
                     }
 
-                    $elementNameInDestination = avoidNameCollision($path, $element);
+                    $elementNameInDestination = avoidNameCollision($path, $element->getName(), $idUser);
 
                     if(is_string($elementNameInDestination))
                     {
@@ -1082,7 +1093,8 @@ function moveHandler($idElement, $idUser, $path, $options = array())
                                 //récupération des éléments contenus dans le dossier
                                 $seekElementsInFolder = array(
                                     'state' => (int)1,
-                                    'serverPath' => new MongoRegex("/^$serverPath/i")
+                                    'serverPath' => new MongoRegex("/^$serverPath/i"),
+                                    'idOwner' => $idUser
                                 );
 
                                 $elementsInFolder = $elementPdoManager->find($seekElementsInFolder);
@@ -1145,7 +1157,7 @@ function moveHandler($idElement, $idUser, $path, $options = array())
                                  * Si le déplacement vide un dossier ou rempli un dossier qui était vide,
                                  * on met à jour son refElement
                                  */
-                                updateFolderStatus($path);
+                                updateFolderStatus($path, $idUser);
 
                                 if(array_key_exists('keepRights', $options) && $options['keepRights'] == FALSE)
                                     disableRights($impactedElements);
@@ -1168,4 +1180,176 @@ function moveHandler($idElement, $idUser, $path, $options = array())
         else return prepareMoveReturn($options, $operationSuccess, array('error' => 'Access denied'), $impactedElements, $movedElements, $failedToMove);
     }
     else return prepareMoveReturn($options, $operationSuccess, $hasRight, $impactedElements, $movedElements, $failedToMove);
+}
+
+/**
+ * Crée un nouveau dossier vierge à l'emplacement voulu.
+ * @author Alban Truc
+ * @param string|MongoId $idUser
+ * @param string $path
+ * @param string $folderName
+ * @param bool $inheritRightsFromParent
+ * @since 09/06/2014
+ * @return array|bool|Element|Element[]|TRUE  -- à vérifier
+ */
+
+function createNewFolder($idUser, $path, $folderName, $inheritRightsFromParent)
+{
+    $idUser = new MongoId($idUser);
+
+    $operationSuccess = FALSE;
+
+    $elementPdoManager = new ElementPdoManager();
+
+    if($path != '/')
+    {
+        //récupération du dossier parent
+        $explode = explode('/', $path);
+        $parentDirectoryName = $explode[sizeof($explode) - 2];
+        $parentDirectoryPath = implode('/', array_slice($explode, 0, sizeof($explode) - 2)).'/';
+
+        $parentElementCriteria = array(
+            'state' => (int)1,
+            'name' => $parentDirectoryName,
+            'serverPath' => $parentDirectoryPath,
+            'idOwner' => $idUser
+        );
+
+        $parentElement = $elementPdoManager->findOne($parentElementCriteria);
+
+        if($parentElement instanceof Element)
+        {
+            /*
+             * 11 correspond au droit de lecture et écriture.
+             * Si on souhaite accepter la copie avec des droits de plus bas niveau, il suffit d'ajouter les codes correspondant
+             * au tableau en 3e paramètre ci-dessous.
+             */
+
+            $hasRight = actionAllowed($parentElement->getId(), $idUser, array('11'));
+
+            if(is_bool($hasRight) && $hasRight == FALSE)
+                return array('error' => 'Creation not allowed.');
+            elseif(is_array($hasRight))
+                return $hasRight;
+        }
+        else return $parentElement;
+    }
+
+    //vérification qu'il n'existe pas déjà un dossier avec le même nom
+    $elementCriteria = array(
+        'state' => (int)1,
+        'name' => $folderName,
+        'serverPath' => $path,
+        'idOwner' => $idUser
+    );
+
+    $elementsWithSameName = $elementPdoManager->find($elementCriteria);
+
+    if(is_array($elementsWithSameName) && array_key_exists('error', $elementsWithSameName))
+    {
+        if($elementsWithSameName['error'] != 'No match found.')
+            return $elementsWithSameName;
+    }
+    else
+    {
+        foreach($elementsWithSameName as $key => $elementWithSameName)
+        {
+            $isFolder = isFolder($elementWithSameName->getRefElement());
+            if(is_bool($isFolder))
+            {
+                if($isFolder == FALSE)
+                {
+                    unset($elementsWithSameName[$key]);
+                }
+            }
+            else return $isFolder;
+        }
+
+        if(!(empty($elementsWithSameName)))
+            return array('error' => 'Folder name not available.');
+    }
+
+    //Récupération de l'id de RefElement dossier vide
+    $refElementPdoManager = new RefElementPdoManager();
+    $emptyFolder = $refElementPdoManager->findOne(array('state' => 1, 'code' => '4002'), array('_id' => TRUE));
+
+    $newFolder = array(
+        'state' => 1,
+        'name' => $folderName,
+        'idOwner' => $idUser,
+        'idRefElement' => $emptyFolder['_id'],
+        'serverPath' => $path
+    );
+
+    $insertResult = $elementPdoManager->create($newFolder);
+
+    if(is_bool($insertResult))
+    {
+        if($insertResult == TRUE)
+        {
+            //Le dossier parent était vide
+            if(isset($parentElement))
+            {
+                if($parentElement->getRefElement() == $emptyFolder['_id'])
+                {
+                    $parentElementCriteria = array(
+                        '_id' => $parentElement->getId()
+                    );
+                    //on change l'id du dossier parent pour dossier non vide
+                    $notEmptyFolder = $refElementPdoManager->findOne(array('state' => 1, 'code' => '4003'), array('_id' => TRUE));
+                    $update = array(
+                        '$set' => array(
+                            'idRefElement' => $notEmptyFolder['_id']
+                        )
+                    );
+
+                    //dans le cas où on voudrait récupérer le dossier parent mis à jour, on peut utiliser $updatedFolder
+                    $updatedFolder = $elementPdoManager->findAndModify($parentElementCriteria, $update, array('new' => TRUE));
+                    if($updatedFolder instanceof Element)
+                        $operationSuccess = TRUE;
+                }
+
+                if($inheritRightsFromParent == TRUE)
+                {
+                    //récupération des droits appliqués sur le dossier parent
+                    $rightPdoManager = new RightPdoManager();
+
+                    $rightCriteria = array(
+                        'state' => 1,
+                        'idElement' => $parentElement->getId()
+                    );
+
+                    $rights = $rightPdoManager->find($rightCriteria);
+
+                    if(!(array_key_exists('error', $rights)))
+                    {
+                        //récupération du dossier précédemment inséré
+                        $newElement = $elementPdoManager->findOne($newFolder);
+
+                        if($newElement instanceof Element)
+                        {
+                            $insertRightCopy = array();
+                            foreach($rights as $right)
+                            {
+                                $rightCopy = clone $right;
+                                $rightCopy->setId(new MongoId());
+                                $rightCopy->setElement($newElement->getId());
+
+                                $insertRightCopy[] = $elementPdoManager->create($rightCopy);
+                                //on pourrait se servir de $insertRightCopy pour identifier les erreurs éventuelles
+                            }
+                            //@todo vérifier que tous les insertRightCopy sont OK et si c'est le cas operationSuccess = TRUE
+                            $operationSuccess = TRUE;
+                        }
+                        else return $newElement;
+                    }
+                }
+            }
+
+            $operationSuccess = TRUE;
+            return $operationSuccess;
+        }
+        else return array('error' => 'Could not create folder in database.');
+    }
+    else return $insertResult;
 }
