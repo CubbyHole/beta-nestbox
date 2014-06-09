@@ -1206,7 +1206,7 @@ function createNewFolder($idUser, $path, $folderName, $inheritRightsFromParent)
         //récupération du dossier parent
         $explode = explode('/', $path);
         $parentDirectoryName = $explode[sizeof($explode) - 2];
-        $parentDirectoryPath = array_slice($explode, 0, sizeof($explode) - 2);
+        $parentDirectoryPath = implode('/', array_slice($explode, 0, sizeof($explode) - 2)).'/';
 
         $parentElementCriteria = array(
             'state' => (int)1,
@@ -1288,55 +1288,61 @@ function createNewFolder($idUser, $path, $folderName, $inheritRightsFromParent)
         if($insertResult == TRUE)
         {
             //Le dossier parent était vide
-            if($parentElement->getRefElement() == $emptyFolder['_id'])
+            if(isset($parentElement))
             {
-                //on change l'id du dossier parent pour dossier non vide
-                $notEmptyFolder = $refElementPdoManager->findOne(array('state' => 1, 'code' => '4003'), array('_id' => TRUE));
-                $update = array(
-                    '$set' => array(
-                        'idRefElement' => $notEmptyFolder['_id']
-                    )
-                );
-
-                //dans le cas où on voudrait récupérer le dossier parent mis à jour, on peut utiliser $updatedFolder
-                $updatedFolder = $elementPdoManager->findAndModify($newFolder, $update, array('new' => TRUE));
-                if($updatedFolder instanceof Element)
-                    $operationSuccess = TRUE;
-            }
-
-            if($inheritRightsFromParent == TRUE)
-            {
-                //récupération des droits appliqués sur le dossier parent
-                $rightPdoManager = new RightPdoManager();
-
-                $rightCriteria = array(
-                    'state' => 1,
-                    'idElement' => $parentElement->getId()
-                );
-
-                $rights = $rightPdoManager->find($rightCriteria);
-
-                if(!(array_key_exists('error', $rights)))
+                if($parentElement->getRefElement() == $emptyFolder['_id'])
                 {
-                    //récupération du dossier précédemment inséré
-                    $newElement = $elementPdoManager->findOne($newFolder);
+                    $parentElementCriteria = array(
+                        '_id' => $parentElement->getId()
+                    );
+                    //on change l'id du dossier parent pour dossier non vide
+                    $notEmptyFolder = $refElementPdoManager->findOne(array('state' => 1, 'code' => '4003'), array('_id' => TRUE));
+                    $update = array(
+                        '$set' => array(
+                            'idRefElement' => $notEmptyFolder['_id']
+                        )
+                    );
 
-                    if($newElement instanceof Element)
-                    {
-                        $insertRightCopy = array();
-                        foreach($rights as $right)
-                        {
-                            $rightCopy = clone $right;
-                            $rightCopy->setId(new MongoId());
-                            $rightCopy->setElement($newElement->getId());
-
-                            $insertRightCopy[] = $elementPdoManager->create($rightCopy);
-                            //on pourrait se servir de $insertRightCopy pour identifier les erreurs éventuelles
-                        }
-                        //@todo vérifier que tous les insertRightCopy sont OK et si c'est le cas operationSuccess = TRUE
+                    //dans le cas où on voudrait récupérer le dossier parent mis à jour, on peut utiliser $updatedFolder
+                    $updatedFolder = $elementPdoManager->findAndModify($parentElementCriteria, $update, array('new' => TRUE));
+                    if($updatedFolder instanceof Element)
                         $operationSuccess = TRUE;
+                }
+
+                if($inheritRightsFromParent == TRUE)
+                {
+                    //récupération des droits appliqués sur le dossier parent
+                    $rightPdoManager = new RightPdoManager();
+
+                    $rightCriteria = array(
+                        'state' => 1,
+                        'idElement' => $parentElement->getId()
+                    );
+
+                    $rights = $rightPdoManager->find($rightCriteria);
+
+                    if(!(array_key_exists('error', $rights)))
+                    {
+                        //récupération du dossier précédemment inséré
+                        $newElement = $elementPdoManager->findOne($newFolder);
+
+                        if($newElement instanceof Element)
+                        {
+                            $insertRightCopy = array();
+                            foreach($rights as $right)
+                            {
+                                $rightCopy = clone $right;
+                                $rightCopy->setId(new MongoId());
+                                $rightCopy->setElement($newElement->getId());
+
+                                $insertRightCopy[] = $elementPdoManager->create($rightCopy);
+                                //on pourrait se servir de $insertRightCopy pour identifier les erreurs éventuelles
+                            }
+                            //@todo vérifier que tous les insertRightCopy sont OK et si c'est le cas operationSuccess = TRUE
+                            $operationSuccess = TRUE;
+                        }
+                        else return $newElement;
                     }
-                    else return $newElement;
                 }
             }
 
