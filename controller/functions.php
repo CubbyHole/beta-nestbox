@@ -43,21 +43,25 @@
 //}
 //
 $elementManager = new ElementPdoManager();
-if(isset($_SESSION['userId']))
-    $userId = $_SESSION['userId'];
+if(isset($_SESSION['user']))
+{
+    $user = unserialize($_SESSION['user']);
+    $userId = $user->getId();
+}
+
 
 /** Si l'utilisateur décide de créer un nouveau dossier => currentDirectory est un input caché dans le formulaire pour récupérer le dossier courant */
 if(isset($_POST['createNewFolder']) && isset($_POST['currentDirectory']))
 {
-    $elementManager->create(array('downloadLink' => '',
-        'hash' => '3b85726f4beab8fdfb655df6a05b74f7449e1097',
-        'idOwner' => new MongoId("536749adedb5025416000029"),
-        'idRefElement' => new MongoId("53639f93edb5021808000075"),
-        'name' => $_POST['nameNewFolder'],
-        'serverPath' => $_POST['currentDirectory'],
-        'size' => new MongoInt32(0),
-        'state' => new MongoInt32(1)));
-    //$elementManager->createNewFolder($_POST['nameNewFolder'], $_POST['currentDirectory']);
+
+    $returnCreate = createNewFolder($userId, $_POST['currentDirectory'], $_POST['nameNewFolder'], true);
+
+    if(is_array($returnCreate) && array_key_exists('error', $returnCreate))
+    {
+        if('error' == 'Folder name not available.')
+            echo "error";
+    }
+//    //$elementManager->createNewFolder($_POST['nameNewFolder'], $_POST['currentDirectory']);
 }
 
 /** Si l'utilisateur veut renommer un élement */
