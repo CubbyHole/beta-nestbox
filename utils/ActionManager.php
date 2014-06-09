@@ -1358,7 +1358,7 @@ function moveHandler($idElement, $idUser, $path, $options = array())
  * @param string $folderName
  * @param bool $inheritRightsFromParent
  * @since 09/06/2014
- * @return array|bool|Element|Element[]|TRUE  -- à vérifier
+ * @return array|TRUE
  */
 
 function createNewFolder($idUser, $path, $folderName, $inheritRightsFromParent)
