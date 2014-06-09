@@ -2,121 +2,119 @@
  * Created by Harry on 16/04/14.
  */
 
-$(document).ready(function(){
-    $("#arbo a").click(function(e){
-        e.preventDefault();
-        page = $(this).attr("href");
-        console.log(page);
-        $.ajax({
-            url: "../.."+page,
-            cache:false,
-            success: function(html){
-                afficher(html);
-            },
-            error:function(XMLHttpRequest, textStatus, errorThrown){
-                alert(textStatus);
-            }
-        })
-        return false;
+
+function clickable (div)
+{
+    page = div.getAttribute("data-tree");
+    console.log(page);
+    $.ajax({
+        url: "../.."+page,
+        cache:false,
+        success: function(html)
+        {
+            afficher(html.split("<body>")[1].split("</body>")[0]);
+        },
+        error:function(XMLHttpRequest, textStatus, errorThrown)
+        {
+            alert(textStatus);
+        }
     })
-});
+    return false;
+}
 
 function afficher(data){
-     $("#contenu").empty();
-     $("#contenu").append(data);
+    $("body").empty();
+    $("body").append(data);
 }
 
 
-$(document).ready(function(){
-    $("div[data-element-type='file']").click(function(){
-        $("div[data-element-type='file']").removeClass('active');
-        $("div[data-element-type='folder']").removeClass('active');
-        $(this).addClass('active');
+function selectFile(file){
+    var elementId = file.getAttribute("id");
+    var elementName = file.getAttribute("name");
 
-        var elementId = this.id;
-        var elementName = this.name;
-        var deleteAction = "<div id='elementToDelete' name="+ elementId +" ><img src='content/img/icon_delete.png'></div>";
-       //$("#actions").empty();
-        hideNewFolderForm();
-        hideDeleteForm();
-        $("#deleteElement").empty();
-        $("#deleteElement").append(deleteAction);
+    $("div[data-element-type='file']").css({
+        'backgroundColor':'transparent'
+    });
+    $("div[data-element-type='folder']").css({
+        'backgroundColor':'transparent'
+    });
+    $("#".concat(elementId)).css({
+        'backgroundColor':'#EEE'
     });
 
-    $("div[data-element-type='folder']").click(function(){
-            $("div[data-element-type='file']").removeClass('active');
-            $("div[data-element-type='folder']").removeClass('active');
-            $(this).addClass('active');
+    var renameAction = "<div id='elementToRename' name="+ elementName +" class="+ elementId +"><a class='renameElement fancybox.ajax' href='controller/fancybox/renameElement.php?id="+ elementId +"'><img src='content/img/icon_modify.png' title='Rename'></a></div>";
+    var deleteAction = "<div id='elementToDisable' name="+ elementName +" class="+ elementId +"><a class='disableElement fancybox.ajax' href='controller/fancybox/disableElement.php?id="+ elementId +"'><img src='content/img/icon_delete.png' title='Delete'></a></div>";
+    var copyAction = "<div id='elementToCopy' name="+ elementName +" class="+ elementId +"><a class='copyElement fancybox.ajax' href='controller/fancybox/copyElement.php?id="+elementId+"'><img src='content/img/icon_copy.png' title='Copy'></a></div>";
+    var moveAction = "<div id='elementToMove' name="+elementName+" class="+ elementId +"><a class='moveElement fancybox.ajax' href='controller/fancybox/moveElement.php?id="+elementId+"'><img src='content/img/icon_cut.png' title='Cut'></a></div>";
+    var downloadAction = "<div id='elementToDownload' name="+elementName+" class="+elementId+"><a class='downloadElement fancybox.ajax' href='controller/fancybox/downloadElement.php?id="+elementId+"'><img src='content/img/icon_download.png' title='Download'></a></div>";
+    $("#renameElement").empty();
+    $("#renameElement").append(renameAction);
+    $("#disableElement").empty();
+    $("#disableElement").append(deleteAction);
+    $("#copyElement").empty();
+    $("#copyElement").append(copyAction);
+    $("#moveElement").empty();
+    $("#moveElement").append(moveAction);
+    $("#downloadElement").empty();
+    $("#downloadElement").append(downloadAction);
+}
 
-        var elementId = this.id;
-        var elementName = this.name;
-        var deleteAction = "<div id='elementToDelete' name="+ elementId +" ><img src='content/img/icon_delete.png'></div>";
-
-        hideNewFolderForm();
-        hideDeleteForm();
-        $("#deleteElement").empty();
-        $("#deleteElement").append(deleteAction);
-    });
-
-    $("#addFolder").click(function(){
-       hideDeleteForm();
-       showNewFolderForm();
-    });
-
-    $("#deleteElement").click(function()
-    {
-        var elementToDelete = document.getElementById("elementToDelete");
-        var nameElementToDelete = elementToDelete.getAttribute("name");
-
-        var nameElement = "<input type='text' name='elementToDelete' value="+ nameElementToDelete +" readonly='true'>";
-        hideNewFolderForm();
-
-        var input = document.getElementById("submitDelete");
-        input.removeChild(input.lastChild);
-
-        $("#submitDelete").append(nameElement);
-        showDeleteForm();
-    });
-
-
-    function hideNewFolderForm(){
-        $("#newFolder").css({
-            'display':'none'
-        });
-    }
-    function showNewFolderForm(){
-        $("#newFolder").css({
-            'display':'inline'
-        });
-    }
-    function hideDeleteForm(){
-        $("#submitDelete").css({
-            'display':'none'
-        });
-    }
-    function showDeleteForm(){
-        $("#submitDelete").css({
-            'display':'inline'
-        });
-    }
-//    var submitButtonDelete = document.getElementById('delElem');
-//
-//    $(submitButtonDelete).click(function()
-//    {
-//        var elementToDelete = document.getElementById("elementToDelete");
-//        var nameElementToDelete = elementToDelete.getAttribute("name");
-//        alert (nameElementToDelete);
-//            $.ajax({
-//                type: "POST",
-//                url: "../Nestbox/controller/functions.php",
-//                data: {nameElement : nameElementToDelete}
-//            });
-//        alert('ajax ok');
-//    });
-});
-
-
-/*function folderExist(data)
+function hoverFile(file)
 {
-    $("#newFolder").append(data);
-}*/
+    var elementId = file.getAttribute("id");
+    var elementName = file.getAttribute("name");
+
+    $("div[data-element-type='file']").mouseenter(function() {
+        $(this).css("background", "#EEE");
+    }).mouseleave(function() {
+        $(this).css("background", "white");
+    });
+}
+
+function selectFolder(folder){
+
+    var elementId = folder.getAttribute("id");
+    var elementName = folder.getAttribute("name");
+
+    $("div[data-element-type='file']").css({
+        'backgroundColor':'transparent'
+    });
+    $("div[data-element-type='folder']").css({
+        'backgroundColor':'transparent'
+    });
+
+    $("#".concat(elementId)).css({
+        'backgroundColor':'#EEE'
+    })
+
+    var renameAction = "<div id='elementToRename' name="+ elementName +" class="+ elementId +"><a class='renameElement fancybox.ajax' href='controller/fancybox/renameElement.php?id="+ elementId +"'><img src='content/img/icon_modify.png' title='Rename'></a></div>";
+    var deleteAction = "<div id='elementToDisable' name="+ elementName +" class="+ elementId +"><a class='disableElement fancybox.ajax' href='controller/fancybox/disableElement.php?id="+ elementId +"'><img src='content/img/icon_delete.png' title='Delete'></a></div>";
+    var copyAction = "<div id='elementToCopy' name="+ elementName +" class="+ elementId +"><a class='copyElement fancybox.ajax' href='controller/fancybox/copyElement.php?id="+elementId+"'><img src='content/img/icon_copy.png' title='Copy'></a></div>";
+    var moveAction = "<div id='elementToMove' name="+elementName+" class="+ elementId +"><a class='moveElement fancybox.ajax' href='controller/fancybox/moveElement.php?id="+elementId+"'><img src='content/img/icon_cut.png' title='Cut'></a></div>";
+
+    $("#renameElement").empty();
+    $("#renameElement").append(renameAction);
+    $("#disableElement").empty();
+    $("#disableElement").append(deleteAction);
+    $("#copyElement").empty();
+    $("#copyElement").append(copyAction);
+    $("#moveElement").empty();
+    $("#moveElement").append(moveAction);
+	$("#downloadElement").empty();
+}
+function hoverFolder(folder)
+{
+    var elementId = folder.getAttribute("id");
+    var elementName = folder.getAttribute("name");
+
+//    $("div[data-element-type='folder']").mouseenter(function() {
+//        $(this).css("background", "#EEE");
+//    }).mouseleave(function() {
+//        $(this).css("background", "white");
+//    });
+
+//    $("div[data-element-type='folder']").mouseenter(function() {
+//        $(this).css("background", "#EEE");
+//    });
+}
+
