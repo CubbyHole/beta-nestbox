@@ -717,23 +717,23 @@ function copyHandler($idElement, $idUser, $path, $options = array())
                          */
                             $destinationFolderName = implode(array_slice(explode('/', $path), -2, 1));
                             $elementCriteria['name'] = $destinationFolderName;
-                        }
 
-                        //récupération de l'id de l'élément en base correspondant au dossier de destination
-                        $idDestinationFolder = $elementPdoManager->findOne($elementCriteria, array('_id' => TRUE));
+                            //récupération de l'id de l'élément en base correspondant au dossier de destination
+                            $idDestinationFolder = $elementPdoManager->findOne($elementCriteria, array('_id' => TRUE));
 
-                        if((array_key_exists('error', $idDestinationFolder)))
-                            return prepareCopyReturn($options, $operationSuccess, $idDestinationFolder, $impactedElements, $pastedElements, $failedToPaste);
-                        else
-                        {
-                            //vérification des droits dans la destination
-                            $hasRightOnDestination = actionAllowed($idDestinationFolder['_id'], $idUser, array('11'));
+                            if((array_key_exists('error', $idDestinationFolder)))
+                                return prepareCopyReturn($options, $operationSuccess, $idDestinationFolder, $impactedElements, $pastedElements, $failedToPaste);
+                            else
+                            {
+                                //vérification des droits dans la destination
+                                $hasRightOnDestination = actionAllowed($idDestinationFolder['_id'], $idUser, array('11'));
 
-                            if(is_array($hasRightOnDestination) && array_key_exists('error', $hasRightOnDestination))
-                                return prepareCopyReturn($options, $operationSuccess, $hasRightOnDestination, $impactedElements, $pastedElements, $failedToPaste);
-                            elseif($hasRightOnDestination == FALSE)
-                                return prepareCopyReturn($options, $operationSuccess, array('error' => 'Access denied in destination'), $impactedElements, $pastedElements, $failedToPaste);
+                                if(is_array($hasRightOnDestination) && array_key_exists('error', $hasRightOnDestination))
+                                    return prepareCopyReturn($options, $operationSuccess, $hasRightOnDestination, $impactedElements, $pastedElements, $failedToPaste);
+                                elseif($hasRightOnDestination == FALSE)
+                                    return prepareCopyReturn($options, $operationSuccess, array('error' => 'Access denied in destination'), $impactedElements, $pastedElements, $failedToPaste);
 
+                            }
                         }
                     }
 
@@ -1059,22 +1059,22 @@ function moveHandler($idElement, $idUser, $path, $options = array())
                          */
                             $destinationFolderName = implode(array_slice(explode('/', $path), -2, 1));
                             $elementCriteria['name'] = $destinationFolderName;
-                        }
 
-                        //récupération de l'id de l'élément en base correspondant au dossier de destination
-                        $idDestinationFolder = $elementPdoManager->findOne($elementCriteria, array('_id' => TRUE));
+                            //récupération de l'id de l'élément en base correspondant au dossier de destination
+                            $idDestinationFolder = $elementPdoManager->findOne($elementCriteria, array('_id' => TRUE));
 
-                        if((array_key_exists('error', $idDestinationFolder)))
-                            return prepareMoveReturn($options, $operationSuccess, $idDestinationFolder, $impactedElements, $movedElements, $failedToMove);
-                        else
-                        {
-                            //vérification des droits dans la destination
-                            $hasRightOnDestination = actionAllowed($idDestinationFolder['_id'], $idUser, array('11'));
+                            if((array_key_exists('error', $idDestinationFolder)))
+                                return prepareMoveReturn($options, $operationSuccess, $idDestinationFolder, $impactedElements, $movedElements, $failedToMove);
+                            else
+                            {
+                                //vérification des droits dans la destination
+                                $hasRightOnDestination = actionAllowed($idDestinationFolder['_id'], $idUser, array('11'));
 
-                            if(is_array($hasRightOnDestination) && array_key_exists('error', $hasRightOnDestination))
-                                return prepareMoveReturn($options, $operationSuccess, $hasRightOnDestination, $impactedElements, $movedElements, $failedToMove);
-                            elseif($hasRightOnDestination == FALSE)
-                                return prepareMoveReturn($options, $operationSuccess, array('error' => 'Access denied in destination'), $impactedElements, $movedElements, $failedToMove);
+                                if(is_array($hasRightOnDestination) && array_key_exists('error', $hasRightOnDestination))
+                                    return prepareMoveReturn($options, $operationSuccess, $hasRightOnDestination, $impactedElements, $movedElements, $failedToMove);
+                                elseif($hasRightOnDestination == FALSE)
+                                    return prepareMoveReturn($options, $operationSuccess, array('error' => 'Access denied in destination'), $impactedElements, $movedElements, $failedToMove);
+                            }
                         }
                     }
 
