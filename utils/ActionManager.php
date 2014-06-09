@@ -306,7 +306,7 @@ function avoidNameCollision($path, $elementName, $idOwner)
         'name' => $elementName,
         'idOwner' => $idOwner
     );
-
+//    return var_dump($seekForNameDuplicate);
     $elementsWithSameName = $elementPdoManager->find($seekForNameDuplicate);
     //var_dump($elementsWithSameName);
 
@@ -737,7 +737,7 @@ function copyHandler($idElement, $idUser, $path, $options = array())
                         }
                     }
 
-                    $elementNameInDestination = avoidNameCollision($path, $element, $idUser);
+                    $elementNameInDestination = avoidNameCollision($path, $element->getName(), $idUser);
 
                     if(is_string($elementNameInDestination))
                     {
@@ -1078,7 +1078,7 @@ function moveHandler($idElement, $idUser, $path, $options = array())
                         }
                     }
 
-                    $elementNameInDestination = avoidNameCollision($path, $element, $idUser);
+                    $elementNameInDestination = avoidNameCollision($path, $element->getName(), $idUser);
 
                     if(is_string($elementNameInDestination))
                     {
