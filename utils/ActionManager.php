@@ -1014,7 +1014,6 @@ function renameHandler($idElement, $idUser, $newName, $options = array())
                         if($elementsWithSameName['error'] != 'No match found.')
                             return $elementsWithSameName;
                     }
-
                     //@todo rename sur le serveur de fichier et obtention du nouveau hash si l'élément est un dossier. Puis màj de ce hash
 
                     $isFolder = isFolder($element->getRefElement());
