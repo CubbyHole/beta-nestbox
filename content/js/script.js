@@ -12,7 +12,7 @@ $(function()
 
 //Pour les tooltip actionButton
     $(".actionButton").tooltip({
-        placement: 'top'
+        placement: 'bottom'
     });
 
 });

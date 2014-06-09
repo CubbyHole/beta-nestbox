@@ -43,21 +43,25 @@
 //}
 //
 $elementManager = new ElementPdoManager();
-if(isset($_SESSION['userId']))
-    $userId = $_SESSION['userId'];
+if(isset($_SESSION['user']))
+{
+    $user = unserialize($_SESSION['user']);
+    $userId = $user->getId();
+}
+
 
 /** Si l'utilisateur décide de créer un nouveau dossier => currentDirectory est un input caché dans le formulaire pour récupérer le dossier courant */
 if(isset($_POST['createNewFolder']) && isset($_POST['currentDirectory']))
 {
-    $elementManager->create(array('downloadLink' => '',
-        'hash' => '3b85726f4beab8fdfb655df6a05b74f7449e1097',
-        'idOwner' => new MongoId("536749adedb5025416000029"),
-        'idRefElement' => new MongoId("53639f93edb5021808000075"),
-        'name' => $_POST['nameNewFolder'],
-        'serverPath' => $_POST['currentDirectory'],
-        'size' => new MongoInt32(0),
-        'state' => new MongoInt32(1)));
-    //$elementManager->createNewFolder($_POST['nameNewFolder'], $_POST['currentDirectory']);
+
+    $returnCreate = createNewFolder($userId, $_POST['currentDirectory'], $_POST['nameNewFolder'], true);
+
+    if(is_array($returnCreate) && array_key_exists('error', $returnCreate))
+    {
+        if('error' == 'Folder name not available.')
+            echo "error";
+    }
+//    //$elementManager->createNewFolder($_POST['nameNewFolder'], $_POST['currentDirectory']);
 }
 
 /** Si l'utilisateur veut renommer un élement */
@@ -83,10 +87,10 @@ if(isset($_POST['copyElem']) && isset($_POST['destination']))
 /* Si l'utilisateur décide de couper un fichier ou un dossier */
 if(isset($_POST['moveElem']) && isset($_POST['destination']))
 {
-   if(isset($_POST['keepRights']))
-       $keepRights = true;
-   else
-       $keepRights = false;
+    if(isset($_POST['keepRights']))
+        $keepRights = true;
+    else
+        $keepRights = false;
 
     if(isset($_POST['keepDownloadLink']))
         $keepDownloadLink = true;
@@ -128,12 +132,9 @@ function arborescence($owner, $isOwner, $dir)
 
     $elementList = $elementManager->returnElementsDetails($owner, $isOwner, $dir);
 
-
-    echo '<br />';
-    echo '<br />';
-
     echo "<!-- Arborescence -->";
     echo '<div class="col-md-3 arborescence">';
+//    echo '<h3 class="title-content">Tree</h3>';
     // Root
     if(!isset($_GET['dir']))
         echo '
@@ -214,6 +215,8 @@ function arborescence($owner, $isOwner, $dir)
         }
     };
 echo '</div>';//fin div container
+
+
 }
 
 
@@ -222,10 +225,9 @@ function contenu($owner,$isOwner,$dir)
     $elementManager = new ElementPdoManager();
     $refElementManager = new RefElementPdoManager();
 
-    echo "<br />";
-    echo "<br />";
     echo "<!-- Contenu -->";
-    echo '<div class="col-md-9 contenu">';
+    echo '<div class="col-md-3 contenu">';
+//    echo '<h3 class="title-content">Content</h3>';
 
     $elementList = $elementManager->returnElementsDetails($owner, $isOwner, $dir);
 
