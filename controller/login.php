@@ -27,9 +27,7 @@ if(isset($_POST['loginForm'] ))
 		if(!(array_key_exists('error', $user)))
 		{
 			$loginOK = TRUE;
-//            $_SESSION['user'] = serialize($user);
             $_SESSION['user'] = serialize($user);
-			$_SESSION['userId'] = $user->getId();
 			//redirection vers index
 			header('Location:../');
 		}
