@@ -1374,7 +1374,7 @@ function createNewFolder($idUser, $path, $folderName, $inheritRightsFromParent)
         //récupération du dossier parent
         $explode = explode('/', $path);
         $parentDirectoryName = $explode[sizeof($explode) - 2];
-        $parentDirectoryPath = array_slice($explode, 0, sizeof($explode) - 2);
+        $parentDirectoryPath = implode('/', array_slice($explode, 0, sizeof($explode) - 2)).'/';
 
         $parentElementCriteria = array(
             'state' => (int)1,
@@ -1460,6 +1460,9 @@ function createNewFolder($idUser, $path, $folderName, $inheritRightsFromParent)
             {
                 if($parentElement->getRefElement() == $emptyFolder['_id'])
                 {
+                    $parentElementCriteria = array(
+                        '_id' => $parentElement->getId()
+                    );
                     //on change l'id du dossier parent pour dossier non vide
                     $notEmptyFolder = $refElementPdoManager->findOne(array('state' => 1, 'code' => '4003'), array('_id' => TRUE));
                     $update = array(
@@ -1469,7 +1472,7 @@ function createNewFolder($idUser, $path, $folderName, $inheritRightsFromParent)
                     );
 
                     //dans le cas où on voudrait récupérer le dossier parent mis à jour, on peut utiliser $updatedFolder
-                    $updatedFolder = $elementPdoManager->findAndModify($newFolder, $update, array('new' => TRUE));
+                    $updatedFolder = $elementPdoManager->findAndModify($parentElementCriteria, $update, array('new' => TRUE));
                     if($updatedFolder instanceof Element)
                         $operationSuccess = TRUE;
                 }
@@ -1510,6 +1513,7 @@ function createNewFolder($idUser, $path, $folderName, $inheritRightsFromParent)
                     }
                 }
             }
+
             $operationSuccess = TRUE;
             return $operationSuccess;
         }
