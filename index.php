@@ -107,7 +107,7 @@ if(isset($_SESSION['user']))
 
         ?>
     </div>
-    <div id="fil_ariane" style="margin-top: 50px">
+    <div id="fil_ariane">
         <?php
         if(isset($_GET['dir']))
         {
