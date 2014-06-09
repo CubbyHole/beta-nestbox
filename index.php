@@ -4,10 +4,12 @@ header('Content-Type: text/html; charset=utf-8');
 
 
 require_once 'required.php';
-//unset($_SESSION['userId']);
-if(isset($_SESSION['userId']))
-{
+//unset($_SESSION['user']);
 
+if(isset($_SESSION['user']))
+{
+$user = unserialize($_SESSION['user']);
+$userId = $user->getId();
 ?>
 <!DOCTYPE html>
 <html>
@@ -19,6 +21,7 @@ if(isset($_SESSION['userId']))
     <link rel=stylesheet type="text/css" href="content/css/style.css">
     <link rel=stylesheet type="text/css" href="content/bootstrap/css/bootstrap.css">
     <link rel=stylesheet type="text/css" href="content/bootstrap/css/bootstrap-theme.css">
+    <link rel="shortcut icon" href="content/img/logo/logoNestBox.png">
 
     <!-- Add fancyBox -->
     <link rel="stylesheet" href="content/css/jquery.fancybox.css?v=2.1.5" type="text/css" media="screen" />
@@ -57,7 +60,6 @@ if(isset($_SESSION['userId']))
 </head>
 
 <?php
-$userId = $_SESSION['userId']; //en fonction de l'user connecté
 include 'header/menu.php';
 ?>
 
@@ -67,16 +69,16 @@ include 'header/menu.php';
 
         if(isset($_GET['dir']))
         {
-            var_dump(urlencode($_GET['dir']));
+            $directoryCurrent = urlencode($_GET['dir']);
             echo '<span>
             <div id="addFolder" class="actionButton" data-toggle="tooltip" title data-original-title="Create new folder">
-                <a class="addFolder fancybox.ajax " href="controller/fancybox/createFolder.php?dir='.urlencode($_GET['dir']).'">
+                <a class="addFolder fancybox.ajax " href="controller/fancybox/createFolder.php?dir='.$directoryCurrent.'">
                 <img src="content/img/icon_add.png">
                 </a>
             </div>
 
             <div id="uploadElement" class="actionButton" data-toggle="tooltip" title="Upload file">
-                <a class="uploadElement fancybox.ajax" href="controller/fancybox/uploadElement.php?dir='.utf8_decode($_GET['dir']).'">
+                <a class="uploadElement fancybox.ajax" href="controller/fancybox/uploadElement.php?dir='.$directoryCurrent.'">
                 <img src="content/img/icon_upload.png">
                 </a>
             </div>';
@@ -105,24 +107,51 @@ include 'header/menu.php';
 
         ?>
     </div>
+    <div id="fil_ariane" style="margin-top: 50px">
+        <?php
+        if(isset($_GET['dir']))
+        {
+            $explode = explode('/', $_GET['dir']);
+            $d = $explode[sizeof($explode)-2];
+            var_dump($d);
+            echo '<span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'">
+                    Root
+                  </span>';
+            echo '/';
+            echo '<span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$d.'/">
+                    '.$d.'
+                  </span>';
+            echo '/';
+            echo '<span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$d.'/">
+                    '.$d.'
+                  </span>';
+        }
+        else
+        {
+            echo '<span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'">
+                    Root
+                  </span>';
+        }
+        ?>
+    </div>
 
-    <br />
     <!--        <!-- liste des répertoires-->
     <!--        et des sous-répertoires -->
     <?php
-    arborescence($userId,"1","/");    // owner, isOwner, dir (à voir pour le dir pour mettre la base ) + owner = idOwner en fonction de l'user qui se connecte
+    echo '<div class="content-arbo">';
+        arborescence($userId,"1","/");    // owner, isOwner, dir (à voir pour le dir pour mettre la base ) + owner = idOwner en fonction de l'user qui se connecte
 
-    if(!isset($_GET['dir']) || $_GET['dir'] == "/")
-        contenu("536749adedb5025416000029","1","/");
+        if(!isset($_GET['dir']) || $_GET['dir'] == "/")
+            contenu($userId,"1","/");
+        else
+        {
+            contenu($userId,"1",$_GET['dir']);
+        }
+    echo '</div>';
+    }
     else
     {
-        contenu("536749adedb5025416000029","1",$_GET['dir']);
-    }
-//    include 'footer/footer.php';
-    }
-    else
-    {
-        echo "test";
+        header('Location: /Nestbox/view/login.php');
     }
     ?>
 
