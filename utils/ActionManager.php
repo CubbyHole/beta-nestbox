@@ -1080,7 +1080,6 @@ function renameHandler($idElement, $idUser, $newName, $options = array())
                         $operationSuccess = TRUE;
 
                         return prepareMoveReturn($options, $operationSuccess, array(), $impactedElements, $updatedElements, $failedToUpdate);
-
                     }
                     else return prepareMoveReturn($options, $operationSuccess, $isFolder, $impactedElements, $updatedElements, $failedToUpdate);
                 }
@@ -1094,7 +1093,7 @@ function renameHandler($idElement, $idUser, $newName, $options = array())
 }
 
 /**
- * Prépare le retour de la fonction moveHandler
+ * Prépare le retour des fonctions moveHandler et renameHandler
  * @author Alban Truc
  * @param array $options
  * @param bool $operationSuccess
