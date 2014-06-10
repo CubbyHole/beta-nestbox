@@ -900,7 +900,9 @@ function copyHandler($idElement, $idUser, $path, $options = array())
 }
 
 /**
- * Prépare le retour de la fonction renameHandler
+ * Prépare le retour de la fonction renameHandler.
+ * On pourrait se servir de prepareMoveReturn étant donné que la structure est similaire, mais en faisant une autre
+ * fonction, on peut différencier les indexes, les messages, etc et être mieux préparé à de possibles modifications.
  * @author Alban Truc
  * @param array $options
  * @param bool $operationSuccess
@@ -935,7 +937,7 @@ function prepareRenameReturn($options, $operationSuccess, $error, $elementsImpac
         if(array_key_exists('returnUpdatedElements', $options) && $options['returnUpdatedElements'] == TRUE)
         {
             if(empty($updatedElements))
-                $return['updatedElements'] = 'No moved element or the function had an error before trying to.';
+                $return['updatedElements'] = 'No updated element or the function had an error before trying to.';
             else
                 $return['updatedElements'] = $updatedElements;
 
@@ -1079,21 +1081,21 @@ function renameHandler($idElement, $idUser, $newName, $options = array())
 
                         $operationSuccess = TRUE;
 
-                        return prepareMoveReturn($options, $operationSuccess, array(), $impactedElements, $updatedElements, $failedToUpdate);
+                        return prepareRenameReturn($options, $operationSuccess, array(), $impactedElements, $updatedElements, $failedToUpdate);
                     }
-                    else return prepareMoveReturn($options, $operationSuccess, $isFolder, $impactedElements, $updatedElements, $failedToUpdate);
+                    else return prepareRenameReturn($options, $operationSuccess, $isFolder, $impactedElements, $updatedElements, $failedToUpdate);
                 }
-                else return prepareMoveReturn($options, $operationSuccess, array('error' => 'Element inactivated, nothing to do'), $impactedElements, $updatedElements, $failedToUpdate);
+                else return prepareRenameReturn($options, $operationSuccess, array('error' => 'Element inactivated, nothing to do'), $impactedElements, $updatedElements, $failedToUpdate);
             }
-            else return prepareMoveReturn($options, $operationSuccess, $element, $impactedElements, $updatedElements, $failedToUpdate);
+            else return prepareRenameReturn($options, $operationSuccess, $element, $impactedElements, $updatedElements, $failedToUpdate);
         }
-        else return prepareMoveReturn($options, $operationSuccess, array('error' => 'Access denied'), $impactedElements, $updatedElements, $failedToUpdate);
+        else return prepareRenameReturn($options, $operationSuccess, array('error' => 'Access denied'), $impactedElements, $updatedElements, $failedToUpdate);
     }
-    else return prepareMoveReturn($options, $operationSuccess, $hasRight, $impactedElements, $updatedElements, $failedToUpdate);
+    else return prepareRenameReturn($options, $operationSuccess, $hasRight, $impactedElements, $updatedElements, $failedToUpdate);
 }
 
 /**
- * Prépare le retour des fonctions moveHandler et renameHandler
+ * Prépare le retour dela fonction moveHandler
  * @author Alban Truc
  * @param array $options
  * @param bool $operationSuccess
