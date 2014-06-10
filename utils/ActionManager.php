@@ -1054,8 +1054,8 @@ function renameHandler($idElement, $idUser, $newName, $options = array())
 
                             if(count($impactedElements) != $key+1)
                             {
-                                $newPath = $element->getServerPath();
-                                preg_replace($element->getName(), $newName, $newPath);
+                                $impactedElementPath = $impactedElement->getServerPath();
+                                $newPath = preg_replace('/'.$element->getName().'/i', $newName, $impactedElementPath);
                                 $elementCopy->setServerPath($newPath);
                             }
                             else
