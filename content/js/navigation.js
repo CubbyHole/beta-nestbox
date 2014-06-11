@@ -31,6 +31,7 @@ function afficher(data){
 function selectFile(file){
     var elementId = file.getAttribute("id");
     var elementName = file.getAttribute("name");
+    var elementRight = file.getAttribute("class");
 
     $("div[data-element-type='file']").css({
         'backgroundColor':'transparent'
@@ -42,27 +43,34 @@ function selectFile(file){
         'backgroundColor':'#EEE'
     });
 
-    var renameAction = "<div id='elementToRename' name="+ elementName +" class="+ elementId +"><a class='renameElement fancybox.ajax' href='controller/fancybox/renameElement.php?id="+ elementId +"'><img src='content/img/icon_modify.png' title='Rename'></a></div>";
-    var deleteAction = "<div id='elementToDisable' name="+ elementName +" class="+ elementId +"><a class='disableElement fancybox.ajax' href='controller/fancybox/disableElement.php?id="+ elementId +"'><img src='content/img/icon_delete.png' title='Delete'></a></div>";
-    var copyAction = "<div id='elementToCopy' name="+ elementName +" class="+ elementId +"><a class='copyElement fancybox.ajax' href='controller/fancybox/copyElement.php?id="+elementId+"'><img src='content/img/icon_copy.png' title='Copy'></a></div>";
-    var moveAction = "<div id='elementToMove' name="+elementName+" class="+ elementId +"><a class='moveElement fancybox.ajax' href='controller/fancybox/moveElement.php?id="+elementId+"'><img src='content/img/icon_cut.png' title='Cut'></a></div>";
-    var downloadAction = "<div id='elementToDownload' name="+elementName+" class="+elementId+"><a class='downloadElement fancybox.ajax' href='controller/fancybox/downloadElement.php?id="+elementId+"'><img src='content/img/icon_download.png' title='Download'></a></div>";
+    var renameAction = "<div id='elementToRename' name="+ elementName +" class="+ elementId +"><a class='renameElement fancybox.ajax' href='controller/fancybox/renameElement.php?id="+ elementId +"'><img class='imgButton' src='content/img/icon_modify.png' title='Rename'></a></div>";
+    var deleteAction = "<div id='elementToDisable' name="+ elementName +" class="+ elementId +"><a class='disableElement fancybox.ajax' href='controller/fancybox/disableElement.php?id="+ elementId +"'><img class='imgButton' src='content/img/icon_delete.png' title='Delete'></a></div>";
+    var copyAction = "<div id='elementToCopy' name="+ elementName +" class="+ elementId +"><a class='copyElement fancybox.ajax' href='controller/fancybox/copyElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_copy.png' title='Copy'></a></div>";
+    var moveAction = "<div id='elementToMove' name="+elementName+" class="+ elementId +"><a class='moveElement fancybox.ajax' href='controller/fancybox/moveElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_cut.png' title='Cut'></a></div>";
+    var downloadAction = "<div id='elementToDownload' name="+elementName+" class="+elementId+"><a class='downloadElement fancybox.ajax' href='controller/fancybox/downloadElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_download.png' title='Download'></a></div>";
+
     $("#renameElement").empty();
-    $("#renameElement").append(renameAction);
     $("#disableElement").empty();
-    $("#disableElement").append(deleteAction);
     $("#copyElement").empty();
-    $("#copyElement").append(copyAction);
     $("#moveElement").empty();
-    $("#moveElement").append(moveAction);
     $("#downloadElement").empty();
     $("#downloadElement").append(downloadAction);
+
+    if(elementRight == 11 || elementRight == null)
+    {
+        $("#renameElement").append(renameAction);
+        $("#disableElement").append(deleteAction);
+        $("#copyElement").append(copyAction);
+        $("#moveElement").append(moveAction);
+    }
+
 }
 
 function hoverFile(file)
 {
     var elementId = file.getAttribute("id");
     var elementName = file.getAttribute("name");
+    var elementRight = file.getAttribute("class");
 
     $("div[data-element-type='file']").mouseenter(function() {
         $(this).css("background", "#EEE");
@@ -75,6 +83,7 @@ function selectFolder(folder){
 
     var elementId = folder.getAttribute("id");
     var elementName = folder.getAttribute("name");
+    var elementRight = folder.getAttribute("class");
 
     $("div[data-element-type='file']").css({
         'backgroundColor':'transparent'
@@ -85,23 +94,30 @@ function selectFolder(folder){
 
     $("#".concat(elementId)).css({
         'backgroundColor':'#EEE'
-    })
+    });
 
-    var renameAction = "<div id='elementToRename' name="+ elementName +" class="+ elementId +"><a class='renameElement fancybox.ajax' href='controller/fancybox/renameElement.php?id="+ elementId +"'><img src='content/img/icon_modify.png' title='Rename'></a></div>";
-    var deleteAction = "<div id='elementToDisable' name="+ elementName +" class="+ elementId +"><a class='disableElement fancybox.ajax' href='controller/fancybox/disableElement.php?id="+ elementId +"'><img src='content/img/icon_delete.png' title='Delete'></a></div>";
-    var copyAction = "<div id='elementToCopy' name="+ elementName +" class="+ elementId +"><a class='copyElement fancybox.ajax' href='controller/fancybox/copyElement.php?id="+elementId+"'><img src='content/img/icon_copy.png' title='Copy'></a></div>";
-    var moveAction = "<div id='elementToMove' name="+elementName+" class="+ elementId +"><a class='moveElement fancybox.ajax' href='controller/fancybox/moveElement.php?id="+elementId+"'><img src='content/img/icon_cut.png' title='Cut'></a></div>";
+    var renameAction = "<div id='elementToRename' name="+ elementName +" class="+ elementId +"><a class='renameElement fancybox.ajax' href='controller/fancybox/renameElement.php?id="+ elementId +"'><img class='imgButton' src='content/img/icon_modify.png' title='Rename'></a></div>";
+    var deleteAction = "<div id='elementToDisable' name="+ elementName +" class="+ elementId +"><a class='disableElement fancybox.ajax' href='controller/fancybox/disableElement.php?id="+ elementId +"'><img class='imgButton' src='content/img/icon_delete.png' title='Delete'></a></div>";
+    var copyAction = "<div id='elementToCopy' name="+ elementName +" class="+ elementId +"><a class='copyElement fancybox.ajax' href='controller/fancybox/copyElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_copy.png' title='Copy'></a></div>";
+    var moveAction = "<div id='elementToMove' name="+elementName+" class="+ elementId +"><a class='moveElement fancybox.ajax' href='controller/fancybox/moveElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_cut.png' title='Cut'></a></div>";
 
     $("#renameElement").empty();
-    $("#renameElement").append(renameAction);
     $("#disableElement").empty();
-    $("#disableElement").append(deleteAction);
     $("#copyElement").empty();
-    $("#copyElement").append(copyAction);
     $("#moveElement").empty();
-    $("#moveElement").append(moveAction);
 	$("#downloadElement").empty();
+
+    if(elementRight == 11 || elementRight == null)
+    {
+        $("#renameElement").append(renameAction);
+        $("#disableElement").append(deleteAction);
+        $("#copyElement").append(copyAction);
+        $("#moveElement").append(moveAction);
+    }
 }
+
+
+
 function hoverFolder(folder)
 {
     var elementId = folder.getAttribute("id");
