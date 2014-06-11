@@ -8,7 +8,7 @@ $(document).ready(function(){
         maxHeight	: 600,
         fitToView	: false,
         width		: '80%',
-        height		: '80%',
+        height		: '45%',
         autoSize	: false,
         closeClick	: false,
         openEffect	: 'none',

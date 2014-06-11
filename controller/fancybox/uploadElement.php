@@ -17,15 +17,7 @@ require_once $projectRoot.'/required.php';
 (function () {
     "use strict";
 
-    /*
-    * (c) 2011 by md5file.com. All rights reserved.
-    */
-
-    /*jslint browser: true, indent: 4*/
-    /*global FileReader, File, Worker, alert*/
-
     var file_id = 1, drop_zone;
-
     document.getElementById('drop_zone').onclick = function () {
     document.getElementById('files').click();
 
@@ -46,7 +38,8 @@ require_once $projectRoot.'/required.php';
     alert('File APIs are not fully supported in this browser. Please use latest Mozilla Firefox or Google Chrome.');
     }
 
-    function hash_file(file, workers) {
+    function hash_file(file, workers){
+       console.log(file);
     var i, buffer_size, block, threads, reader, blob, handle_hash_block, handle_load_block;
 
     handle_load_block = function (event) {
@@ -127,12 +120,12 @@ require_once $projectRoot.'/required.php';
 //    workers.push(worker);
 //    }
 
-    if (document.getElementById('hash_sha1').checked) {
+
     output.push('<tr>', '<td>SHA1</td><td> <div class="progress progress-striped active" style="margin-bottom: 0px" id="sha1_file_hash_', file_id, '"><div class="bar" style="width: 0%;"></div></div></td></tr>');
     worker = new Worker('../Nestbox/content/js/calculatorSha1.js');
     worker.addEventListener('message', handle_worker_event('sha1_file_hash_' + file_id));
     workers.push(worker);
-    }
+
 
 //    if (document.getElementById('hash_sha256').checked) {
 //    output.push('<tr>', '<td>SHA256</td><td> <div class="progress progress-striped active" style="margin-bottom: 0px" id="sha256_file_hash_', file_id, '"><div class="bar" style="width: 0%;"></div></div></td></tr>');
@@ -192,11 +185,8 @@ require_once $projectRoot.'/required.php';
         return $refElementNotEmptyDirectory;
 
      echo '<div id="elementInformations">
-            <ul>
-                    <li>Current directory : '.$_GET['dir'].'</li>
-            </ul>
-            <label name="validationUpload">Are you sure you want to upload this file ?</label>
-          </div>';
+            <p><label name="directory">Current Directory : '.$_GET['dir'].'</label><p>
+           </div>';
 
 function cmp($a,$b)
 {
@@ -223,7 +213,6 @@ function cmp($a,$b)
 //
 //}
 
-
 ?>
 
     <!--  formulaire pour la création de dossier -->
@@ -233,19 +222,20 @@ function cmp($a,$b)
 <!--        <input type="file" name="element"></p>-->
 <!--        <div class="dropfile"></div>-->
             <div id="drop_zone" class="alert alert-block alert-success pagination-centered">
-                <h1>Drop files here or click for select</h1> To hash them all
+                <h1 style="text-align: center">Drop files here or click for select</h1>
             </div>
             <div>
 
-                <input type="checkbox" id="hash_sha1" title="Check this to calculate SHA1 file hash" checked/>
-                SHA1&nbsp;
+<!--                <input type="checkbox" id="hash_sha1" title="Check this to calculate SHA1 file hash" checked/>-->
+<!--                SHA1&nbsp;-->
 
                 <div style="float: right">
-                    <input type="file" id="files" name="files[]" multiple/>
+                    <input type="file" id="files" name="files[]" multiple style="display: none"/>
                 </div>
             </div>
             <div id="list"></div>
         <?php
+        echo '<div id="formUpload"><label name="chooseDestination">Select a destination: &nbsp</label>';
           echo '<select name="destination" id="destination">
                 <option>/</option>';
 
@@ -275,7 +265,8 @@ function cmp($a,$b)
                 }
                 echo '</select>';
         ?>
-        <input type="submit" value="Upload" name="uploadElem">
-        <input type="button" onclick="parent.jQuery.fancybox.close();" value="Cancel">
+        <br /><br />
+        <input type="submit" class="btn-success btn" value="Upload" name="uploadElem">
+        <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel"></div>
         <div id="informationElementToUpload"></div>
     </form>
