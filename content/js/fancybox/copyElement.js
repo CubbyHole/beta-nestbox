@@ -3,12 +3,12 @@
  */
 
 $(document).ready(function(){
-    $(".moveElement").fancybox({
+    $(".copyElement").fancybox({
         maxWidth	: 800,
         maxHeight	: 600,
         fitToView	: false,
-        width		: '80%',
-        height		: '80%',
+        width		: '13%',
+        height		: '35%',
         autoSize	: false,
         closeClick	: false,
         openEffect	: 'none',

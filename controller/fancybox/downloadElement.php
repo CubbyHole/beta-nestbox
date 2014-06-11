@@ -43,9 +43,8 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     $refElement = $refElementManager->findById($element->getRefElement());
     $user = $userManager->findById($element->getOwner());
 
-
+    echo '<p><label name="description">Element information:</label></p>';
     echo '<div id="elementInformations">
-            <label name="validationDownload">Are you sure you want to dowload this element ?</label>
                 <ul>
                     <li>Element name : '.$element->getName().'</li>
                     <li>Current directory : '.$element->getServerPath().'</li>
@@ -61,8 +60,8 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
         <?php
             echo '<input type="hidden" name="idElement" value="'.$_GET['id'].'" read-only>';
         ?>
-        <input type="submit" value="Download" name="downloadElem">
-        <input type="button" onclick="parent.jQuery.fancybox.close();" value="Cancel">
+        <p style="text-align: center;"><input type="submit" class="btn-success btn" value="Download" name="downloadElem">
+        <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel"></p>
     </form>
 <?php
 }?>

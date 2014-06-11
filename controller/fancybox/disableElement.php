@@ -20,8 +20,8 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     $refElement = $refElementManager->findById($element->getRefElement());
     $user = $userManager->findById($element->getOwner());
 
+    echo '<p><label name="description">Element information:</label></p>';
     echo '<div id="elementInformations">
-          <label name="validationDisable">Are you sure you want to disable this element ?</label>
             <ul>
                 <li>Element name : '.$element->getName().'</li>
                 <li>Current directory : '.$element->getServerPath().'</li>
@@ -36,8 +36,8 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     <!-- formulaire pour renommer -->
     <form id="submitDisable" method="POST">
         <?php echo '<input type="hidden" name="idElement" value="'.$_GET['id'].'" read-only>'; ?>
-        <input type="submit" value="Disable" name="disableElem">
-        <input type="button" onclick="parent.jQuery.fancybox.close();" value="Cancel">
+        <p style="text-align: center;"><input type="submit" class="btn-success btn" value="Disable" name="disableElem">
+        <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel"></p>
     </form>
 <?php
 }

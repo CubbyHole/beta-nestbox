@@ -43,9 +43,8 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     $refElement = $refElementManager->findById($element->getRefElement());
     $user = $userManager->findById($element->getOwner());
 
-
+    echo '<p><label name="description">Element information:</label></p>';
     echo '<div id="elementInformations">
-            <label name="validationMove">Are you sure you want to move this element ?</label>
                 <ul>
                     <li>Element name : '.$element->getName().'</li>
                     <li>Current directory : '.$element->getServerPath().'</li>
@@ -64,61 +63,62 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     <!-- formulaire pour déplacer -->
     <form id="submitMove" method="POST">
         <?php
+        echo '<p><label name="chooseDestination">Select a destination:</label></p>';
         echo '<input type="hidden" name="idElement" value="'.$_GET['id'].'" read-only>
               <select name="destination" id="destination">';
-        if($element->getServerPath() != "/")
-            echo    ' <option>/</option>';
+                if($element->getServerPath() != "/")
+                    echo    ' <option>/</option>';
 
-        $elementList = $elementManager->find(array(
-                'serverPath'=> new MongoRegex("/^/"),
-                'state' => 1,
-                '$or' => array(
-                    array('idRefElement' => $idRefElementEmptyDirectory),
-                    array('idRefElement' => $idRefElementNotEmptyDirectory)
-                )
-            ),
-            array(
-                'serverPath' => TRUE,
-                'name' => TRUE,
-                '_id' => FALSE
-            ));
+                $elementList = $elementManager->find(array(
+                        'serverPath'=> new MongoRegex("/^/"),
+                        'state' => 1,
+                        '$or' => array(
+                            array('idRefElement' => $idRefElementEmptyDirectory),
+                            array('idRefElement' => $idRefElementNotEmptyDirectory)
+                        )
+                    ),
+                    array(
+                        'serverPath' => TRUE,
+                        'name' => TRUE,
+                        '_id' => FALSE
+                    ));
 
-        $f = function($array){return $array['serverPath'].$array['name'];};
+                $f = function($array){return $array['serverPath'].$array['name'];};
 
-        $elementList = array_map($f, $elementList);
-        $result = array_unique($elementList);
-        usort($result, "cmp");
-        var_dump($result);
-        foreach($result as $elem)
-        {
-            if($element->getServerPath() != '/')
-            {
-
-                $a = "@^".$element->getServerPath().$element->getName()."/@";
-                $b = $elem.'/';
-                $match = preg_match($a, $b, $matches);
-
-                if(($elem.'/' != $element->getServerPath()) && ($elem != $element->getServerPath().$element->getName()) && ($match == false))
+                $elementList = array_map($f, $elementList);
+                $result = array_unique($elementList);
+                usort($result, "cmp");
+                var_dump($result);
+                foreach($result as $elem)
                 {
+                    if($element->getServerPath() != '/')
+                    {
 
-                    echo '<option>'.$elem.'/</option>';
+                        $a = "@^".$element->getServerPath().$element->getName()."/@";
+                        $b = $elem.'/';
+                        $match = preg_match($a, $b, $matches);
+
+                        if(($elem.'/' != $element->getServerPath()) && ($elem != $element->getServerPath().$element->getName()) && ($match == false))
+                        {
+
+                            echo '<option>'.$elem.'/</option>';
+                        }
+                    }
+                    else
+                    {
+                        if($elem != '/'.$element->getName())
+                            echo '<option>'.$elem.'/</option>';
+                    }
+
+
                 }
-            }
-            else
-            {
-                if($elem != '/'.$element->getName())
-                    echo '<option>'.$elem.'/</option>';
-            }
-
-
-        }
-        echo '</select>';
-
+              echo '</select>';
         ?>
+        <br /><br />
         <p><input type="checkbox" name="keepRights" checked><label>Check this box if you want to keep the rights applied on its sub-elements ?</label></p>
         <p><input type="checkbox" name="keepDownloadLink" checked><label>Check this box if you want to keep the download link applied on its sub-elements ?</label></p>
-        <input type="submit" value="Move" name="moveElem">
-        <input type="button" onclick="parent.jQuery.fancybox.close();" value="Cancel">
+        <p style="text-align: center;"><input type="submit" class="btn-success btn" value="Move" name="moveElem">
+        <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel"></p>
     </form>
 <?php
 }?>

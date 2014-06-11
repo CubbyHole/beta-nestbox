@@ -42,8 +42,8 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     $refElement = $refElementManager->findById($element->getRefElement());
     $user = $userManager->findById($element->getOwner());
 
+    echo '<p><label name="description">Element information:</label></p>';
     echo '<div id="elementInformations">
-            <label name="validationRename">Are you sure you want to disable this element ?</label>
                 <ul>
                     <li>Element name : '.$element->getName().'</li>
                     <li>Current directory : '.$element->getServerPath().'</li>
@@ -52,17 +52,17 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
                     <li>Owner : '.$user->getFirstName().' '.$user->getLastName().'</li>
                 </ul>
           </div>';
-
-
     ?>
     <!-- formulaire pour renommer -->
     <form id="submitRename" method="POST">
         <?php
+        echo '<p><label name="nameRename">Enter a new name:</label></p>';
         echo '<input type="hidden" name="idElement" value="'.$_GET['id'].'" read-only>
-        <input type="text" name="newName" value="'.$element->getName().'">';
+              <input type="text" name="newName" value="'.$element->getName().'">';
         ?>
-        <input type="submit" value="Rename" name="renameElem">
-        <input type="button" onclick="parent.jQuery.fancybox.close();" value="Cancel">
+        <br /><br />
+        <p style="text-align: center;"><input type="submit" class="btn-success btn" value="Rename" name="renameElem">
+        <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel"></p>
     </form>
 <?php
 }

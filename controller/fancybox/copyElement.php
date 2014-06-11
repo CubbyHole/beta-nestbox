@@ -43,9 +43,8 @@ $element = $elementManager->findById($_GET['id']);
 $refElement = $refElementManager->findById($element->getRefElement());
 $user = $userManager->findById($element->getOwner());
 
-
+echo '<p><label name="description">Element information:</label></p>';
 echo '<div id="elementInformations">
-    <label name="validationCopy">Are you sure you want to copy this element ?</label>
     <ul>
         <li>Element name : '.$element->getName().'</li>
         <li>Current directory : '.$element->getServerPath().'</li>
@@ -64,6 +63,7 @@ function cmp($a,$b)
 <!-- formulaire pour copier -->
 <form id="submitCopy" method="POST">
     <?php
+        echo '<p><label name="chooseDestination">Select a destination:</label></p>';
         echo '<input type="hidden" name="idElement" value="'.$_GET['id'].'" read-only>
               <select name="destination" id="destination">
               <option>/</option>';
@@ -95,8 +95,9 @@ function cmp($a,$b)
         echo '</select>';
 
     ?>
-    <input type="submit" value="Copy" name="copyElem">
-    <input type="button" onclick="parent.jQuery.fancybox.close();" value="Cancel">
+    <br /><br />
+    <p style="text-align: center;"><input type="submit" class="btn-success btn" value="Copy" name="copyElem">
+    <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel"></p>
 </form>
 <?php
 }?>

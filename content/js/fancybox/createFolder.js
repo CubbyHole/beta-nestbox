@@ -7,7 +7,7 @@ $(document).ready(function(){
         maxWidth	: 800,
         maxHeight	: 600,
         fitToView	: false,
-        width		: '20%',
+        width		: '12%',
         height		: '20%',
         autoSize	: false,
         closeClick	: false,
