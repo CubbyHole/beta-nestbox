@@ -516,4 +516,117 @@ class ElementPdoManager extends AbstractPdoManager implements ElementManagerInte
 
         return $rights;
     }
+
+    public function findSharedElements($idUser = NULL, $path = '/', $options = array())
+    {
+        $criteria = array(
+            'state' => (int)1
+        );
+
+        if($idUser != NULL)
+            $criteria['idUser'] = new MongoId($idUser);
+
+        //récupération des droits sur les éléments
+        $rightPdoManager = new RightPdoManager();
+        $rights = $rightPdoManager->find($criteria);
+
+        $sharedElements = array();
+
+        //pour chaque droit
+        if(is_array($rights) && !(array_key_exists('error', $rights)))
+        {
+            foreach($rights as $key => $right)
+            {
+                $owner = NULL;
+                $refRight = NULL;
+
+                //Récupération de l'élément
+                $elementCriteria = array(
+                    '_id' => new MongoId($right->getElement()),
+                    'state' => (int)1
+                );
+
+                if($path != '/')
+                {
+                    if(isset($options['recursivePath']) && $options['recursivePath'] == TRUE)
+                        $elementCriteria['serverPath'] = new MongoRegex("/^$path/i");
+                    else
+                        $elementCriteria['serverPath'] = $path;
+                }
+
+                $element = self::findOne($elementCriteria);
+
+                if($element instanceof Element)
+                {
+                    /*
+                     * Nécessaire si on veut lier un right à un element. On le fait même dans le cas où le retour
+                     * du right n'est pas demandé; afin de limiter les traitements du retour de cette fonction (ne pas
+                     * avoir à distinguer un cas retour de listes d'objets et retour de liste de tableaux).
+                     */
+                    $element = self::dismount($element);
+
+                    if(!(in_array($element, $sharedElements))) //pour éviter les doublons - pas supposé en avoir
+                    {
+                        if(!(empty($options)))
+                        {
+                            if(isset($options['returnUserInfo']) && $options['returnUserInfo'] == TRUE)
+                            {
+                                $userPdoManager = new UserPdoManager();
+
+                                $userFieldsToReturn = array(
+                                    'state' => TRUE,
+                                    'lastName' => TRUE,
+                                    'firstName' => TRUE,
+                                    'email' => TRUE
+                                );
+
+                                $owner = $userPdoManager->findById($element['idOwner'], $userFieldsToReturn);
+
+                                if(!(array_key_exists('error', $owner)))
+                                    $element['idOwner'] = $owner;
+                            }
+
+                            if(isset($options['returnRefElementInfo']) && $options['returnRefElementInfo'] == TRUE)
+                            {
+                                $refElementPdoManager = new RefElementPdoManager();
+
+                                $refElement = $refElementPdoManager->findById($element['idRefElement']);
+
+                                if(!(array_key_exists('error', $refElement)))
+                                {
+                                    $refElement = self::dismount($refElement);
+                                    $element['idRefElement'] = $refElement;
+                                }
+                            }
+
+                            if(isset($options['returnRefRightInfo']) && $options['returnRefRightInfo'] == TRUE)
+                                $options['returnRightInfo'] = TRUE;
+
+                            if(isset($options['returnRightInfo']) && $options['returnRightInfo'] == TRUE)
+                            {
+                                $element['right'] = self::dismount($right);
+                            }
+
+                            if
+                            (
+                                isset($options['returnRefRightInfo'])
+                                && $options['returnRefRightInfo'] == TRUE
+                                && isset($element['right'])
+                            )
+                            {
+                                $refRightPdoManager = new RefRightPdoManager();
+
+                                $refRight = $refRightPdoManager->findById($element['right']['_id']);
+
+                                if(!(array_key_exists('error', $refRight)))
+                                    $element['right']['idRefRight'] = $refRight;
+                            }
+                        }
+                        $sharedElements[] = $element;
+                    }
+                }
+            }
+            return $sharedElements;
+        }
+    }
 }
