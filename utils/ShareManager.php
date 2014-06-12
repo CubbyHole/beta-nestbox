@@ -51,89 +51,93 @@ function shareWithUser($idElement, $idOwner, $recipientEmail, $refRightCode, $se
 
         if($recipientUser instanceof User)
         {
-            //récupérer l'id du refRight
-            $refRightCriteria = array(
-                'state' => (int)1,
-                'code' => $refRightCode
-            );
-
-            $refRightPdoManager = new RefRightPdoManager();
-            $refRight = $refRightPdoManager->findOne($refRightCriteria, array('_id' => TRUE));
-
-            if(is_array($refRight) && !(array_key_exists('error', $refRight)))
+            if($recipientUser->getId() != $idOwner)
             {
-                $rightList = array();
-
-                $refRightId = $refRight['_id'];
-
-                $newRight = array(
+                //récupérer l'id du refRight
+                $refRightCriteria = array(
                     'state' => (int)1,
-                    'idUser' => $recipientUser->getId(),
-                    'idElement' => $idElement,
-                    'idRefRight' => $refRightId
+                    'code' => $refRightCode
                 );
 
-                $rightList[] = $newRight;
+                $refRightPdoManager = new RefRightPdoManager();
+                $refRight = $refRightPdoManager->findOne($refRightCriteria, array('_id' => TRUE));
 
-                /*
-                 * vérification qu'il ne s'agit pas d'un dossier vide (inutile de chercher à copier le droit
-                 * pour d'éventuels contenus sinon)
-                 */
-                $isNonEmptyFolder = isFolder($element->getRefElement(), TRUE);
-
-                if(is_bool($isNonEmptyFolder))
+                if(is_array($refRight) && !(array_key_exists('error', $refRight)))
                 {
-                    if($isNonEmptyFolder == TRUE)
+                    $rightList = array();
+
+                    $refRightId = $refRight['_id'];
+
+                    $newRight = array(
+                        'state' => (int)1,
+                        'idUser' => $recipientUser->getId(),
+                        'idElement' => $idElement,
+                        'idRefRight' => $refRightId
+                    );
+
+                    $rightList[] = $newRight;
+
+                    /*
+                     * vérification qu'il ne s'agit pas d'un dossier vide (inutile de chercher à copier le droit
+                     * pour d'éventuels contenus sinon)
+                     */
+                    $isNonEmptyFolder = isFolder($element->getRefElement(), TRUE);
+
+                    if(is_bool($isNonEmptyFolder))
                     {
-                        //récupération des éléments contenus dans le dossier
-                        $folderPath = $element->getServerPath().$element->getName().'/';
-
-                        $elementsInFolderCriteria = array(
-                            'state' => 1,
-                            'idOwner' => $idOwner,
-                            'serverPath' => new MongoRegex("/^$folderPath/i")
-                        );
-
-                        $elementsInFolder = $elementPdoManager->find($elementsInFolderCriteria);
-
-                        if(is_array($elementsInFolder) && !(array_key_exists('error', $elementsInFolder)))
+                        if($isNonEmptyFolder == TRUE)
                         {
-                            foreach($elementsInFolder as $elementInFolder)
+                            //récupération des éléments contenus dans le dossier
+                            $folderPath = $element->getServerPath().$element->getName().'/';
+
+                            $elementsInFolderCriteria = array(
+                                'state' => 1,
+                                'idOwner' => $idOwner,
+                                'serverPath' => new MongoRegex("/^$folderPath/i")
+                            );
+
+                            $elementsInFolder = $elementPdoManager->find($elementsInFolderCriteria);
+
+                            if(is_array($elementsInFolder) && !(array_key_exists('error', $elementsInFolder)))
                             {
-                                $rightCopy = $newRight;
-                                $rightCopy['idElement'] = $elementInFolder->getId();
-                                $rightList[] = $rightCopy;
+                                foreach($elementsInFolder as $elementInFolder)
+                                {
+                                    $rightCopy = $newRight;
+                                    $rightCopy['idElement'] = $elementInFolder->getId();
+                                    $rightList[] = $rightCopy;
+                                }
                             }
+                            else return $elementsInFolder;
                         }
-                        else return $elementsInFolder;
                     }
+                    else return $isNonEmptyFolder;
+
+                    /*
+                     * Insertion ou mise à jour du droit en base. De fait cette fonction est utilisé pour la création
+                     * et la mise à jour de droit.
+                     */
+                    $rightPdoManager = new RightPdoManager();
+
+                    $rightCriteria = array(
+                        'state' => (int)1,
+                        'idUser' => $recipientUser->getId()
+                    );
+
+                    $options = array(
+                        'upsert' => TRUE
+                    );
+
+                    foreach($rightList as $right)
+                    {
+                        $rightCriteria['idElement'] = $right['idElement'];
+                        $rightPdoManager->update($rightCriteria, array('$set' => $right), $options);
+                    }
+
+                    //@todo envoyer un mail
                 }
-                else return $isNonEmptyFolder;
-
-                /*
-                 * Insertion ou mise à jour du droit en base. De fait cette fonction est utilisé pour la création
-                 * et la mise à jour de droit.
-                 */
-                $rightPdoManager = new RightPdoManager();
-
-                $rightCriteria = array(
-                    'state' => (int)1,
-                    'idUser' => $recipientUser->getId()
-                );
-
-                $options = array(
-                    'upsert' => TRUE
-                );
-
-                foreach($rightList as $right)
-                {
-                    $rightCriteria['idElement'] = $right['idElement'];
-                    $rightPdoManager->update($rightCriteria, array('$set' => $right), $options);
-                }
-
-                //@todo envoyer un mail
+                else return $refRight;
             }
-            else return $refRight;
+            else return array('error' => 'You cannot share an element with yourself');
         }
         else return $recipientUser;
     }
