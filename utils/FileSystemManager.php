@@ -4,12 +4,17 @@
  * User: Crocell
  * Date: 21/05/14
  * Time: 09:58
+ *
+ * Remarque: les utf8_decode sont utilisés pour le support des accents
  */
 
 $projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Nestbox';
 require_once $projectRoot.'/required.php';
 
+//emplacement du serveur de fichier
 define('PATH', $_SERVER['DOCUMENT_ROOT'].'/Nestbox/');
+
+//@todo utiliser le directoryIterator dans toutes les fonctions
 
 /**
  * Crée un objet DirectoryIterator
@@ -22,6 +27,8 @@ define('PATH', $_SERVER['DOCUMENT_ROOT'].'/Nestbox/');
 
 function createDirectoryIterator($path)
 {
+    $path = utf8_decode($path);
+
     if(is_dir($path) || is_file($path))
     {
         $directoryIterator = new DirectoryIterator($path);
@@ -38,11 +45,18 @@ function createDirectoryIterator($path)
  * @param string $oldName
  * @param string $newName
  * @since 22/05/2014
- * @return array|DirectoryIterator
+ * @return array|bool
  */
 
 function renameFSElement($idUser, $elementPath, $oldName, $newName)
 {
+    $elementPath = utf8_decode($elementPath);
+    $oldName = utf8_decode($oldName);
+    $newName = utf8_decode($newName);
+
+    if(!(is_string($idUser)))
+        $idUser = (string)$idUser;
+
     $fileServerPath = PATH.$idUser.$elementPath;
 
     $oldCompletePath = $fileServerPath.$oldName;
@@ -61,16 +75,7 @@ function renameFSElement($idUser, $elementPath, $oldName, $newName)
                 $renameSuccessful = rename($oldCompletePath, $newCompletePath);
 
                 if ($renameSuccessful)
-                {
-                    //@link http://www.php.net/manual/fr/function.is-dir.php
-                    if (is_dir($newCompletePath))
-                    {
-                        //@link http://www.php.net/manual/fr/function.sha1-file.php
-                        $newHash = sha1_file($newCompletePath);
-                        return $newHash;
-                    }
-                    else return TRUE;
-                }
+                    return TRUE;
                 else return array('error' => 'Could not rename element '.$oldName.' in '.$elementPath);
             }
             else return array('error' => 'You need write access on '.$elementPath);
@@ -80,8 +85,26 @@ function renameFSElement($idUser, $elementPath, $oldName, $newName)
     else return array('error' => 'Invalid source element or name of element already taken');
 }
 
+/**
+ * Copie un élément sur le serveur de fichier
+ * @author Alban Truc
+ * @param MongoId|string $idUser
+ * @param string $elementName
+ * @param string $sourcePath
+ * @param string $destinationPath
+ * @since 12/06/2014
+ * @return array|bool
+ */
+
 function copyFSElement($idUser, $elementName, $sourcePath, $destinationPath)
 {
+    $elementName = utf8_decode($elementName);
+    $sourcePath = utf8_decode($sourcePath);
+    $destinationPath = utf8_decode($destinationPath);
+
+    if(!(is_string($idUser)))
+        $idUser = (string)$idUser;
+
     $sourceFSPath = PATH.$idUser.$sourcePath;
     $destinationFSPath = PATH.$idUser.$destinationPath;
 
@@ -91,28 +114,176 @@ function copyFSElement($idUser, $elementName, $sourcePath, $destinationPath)
     //le dossier et élément source existent
     if(file_exists($sourceCompletePath))
     {
-        $noGo = FALSE;
         //le dossier de destination n'existe pas?
         if(!(file_exists($destinationFSPath)))
         {
             //on le crée {@link http://fr2.php.net/manual/fr/function.mkdir.php}
             $mkdirSuccessful = mkdir($destinationFSPath, 0777, TRUE);
 
-            if($mkdirSuccessful)
-                $noGo = TRUE;
-            else
+            if($mkdirSuccessful != TRUE)
                 return array('error' => 'Destination did not exist. We tried to create it but it failed');
         }
 
         //le nom de l'élément de destination est-il disponible?
-        if($noGo === FALSE && file_exists($destinationCompletePath))
+        if(file_exists($destinationCompletePath))
             return array('error' => 'Element already exists for this name in destination');
+        else
+        {
+            if(is_file($sourceCompletePath))
+                //@link http://www.php.net/manual/fr/function.copy.php
+                $copySuccessful = copy($sourceCompletePath, $destinationCompletePath);
+            elseif(is_dir($sourceCompletePath))
+            {
+                shell_exec("cp -r -a $sourceCompletePath $destinationCompletePath 2>&1");
+            }
+        }
 
-
-        //@link http://www.php.net/manual/fr/function.copy.php
-        $copySuccessful = copy($sourceFSPath.$elementName, $destinationFSPath.$elementName);
-
-
+        if($copySuccessful != TRUE)
+            return array('error' => 'Copy was not done successfully on file server.');
+        else return TRUE;
     }
-    else return array('error' => 'Source path not recognized');
+    else return array('error' => 'Source element not found');
+}
+
+/**
+ * Déplacer un élément sur le serveur de fichier
+ * @author Alban Truc
+ * @param string|MongoId $idUser
+ * @param string $sourcePath
+ * @param string $elementName
+ * @param string $destinationPath
+ * @since 12/06/2014
+ * @return array|bool
+ */
+
+function moveFSElement($idUser, $sourcePath, $elementName, $destinationPath)
+{
+    $sourcePath = utf8_decode($sourcePath);
+    $elementName = utf8_decode($elementName);
+    $destinationPath = utf8_decode($destinationPath);
+
+    if(!(is_string($idUser)))
+        $idUser = (string)$idUser;
+
+    $sourceFSPath = PATH.$idUser.$sourcePath;
+    $destinationFSPath = PATH.$idUser.$destinationPath;
+
+    $sourceCompletePath = $sourceFSPath.$elementName;
+    $destinationCompletePath = $destinationFSPath.$elementName;
+
+    //le dossier et élément source existent
+    if(file_exists($sourceCompletePath))
+    {
+        //le dossier de destination n'existe pas?
+        if(!(file_exists($destinationFSPath)))
+        {
+            //on le crée {@link http://fr2.php.net/manual/fr/function.mkdir.php}
+            $mkdirSuccessful = mkdir($destinationFSPath, 0777, TRUE);
+
+            if($mkdirSuccessful != TRUE)
+                return array('error' => 'Destination did not exist. We tried to create it but it failed');
+        }
+
+        //le nom de l'élément de destination est-il disponible?
+        if(file_exists($destinationCompletePath))
+            return array('error' => 'Element already exists for this name in destination');
+        else
+            //@link http://www.php.net/manual/fr/function.rename.php
+            $renameSuccessful = rename($sourceCompletePath, $destinationCompletePath);
+
+        if($renameSuccessful != TRUE)
+            return array('error' => 'Move was not done successfully on file server.');
+        else return TRUE;
+    }
+    else return array('error' => 'Source element not found');
+}
+
+/**
+ * Créer un dossier vide sur le serveur de fichier
+ * @author Alban Truc
+ * @param string|MongoId $idUser
+ * @param string $path
+ * @param string $name
+ * @since 12/06/2014
+ * @return array|bool
+ */
+
+function createFSDirectory($idUser, $path, $name)
+{
+    $path = utf8_decode($path);
+    $name = utf8_decode($name);
+
+    if(!(is_string($idUser)))
+        $idUser = (string)$idUser;
+
+    $FSPath = PATH.$idUser.$path;
+    $completeFSPath = $FSPath.$name;
+
+    //le dossier devant contenir notre nouveau dossier n'existe pas?
+    if(!(file_exists($FSPath)))
+    {
+        //on le crée {@link http://fr2.php.net/manual/fr/function.mkdir.php}
+        $mkdirSuccessful = mkdir($FSPath, 0777, TRUE);
+
+        if($mkdirSuccessful != TRUE)
+            return array('error' => 'Destination did not exist. We tried to create it but it failed');
+    }
+
+    $mkdirSuccessful = mkdir($completeFSPath, 0777, TRUE);
+
+    if($mkdirSuccessful == TRUE)
+        return TRUE;
+    else
+        return array('error' => 'We could not create the new directory.');
+}
+
+/**
+ * Déplace un élément dans un dossier corbeille
+ * @author Alban Truc
+ * @param $idUser
+ * @param $sourcePath
+ * @param $elementName
+ * @since 12/06/2014
+ * @return array|bool
+ */
+
+function moveToTrash($idUser, $sourcePath, $elementName)
+{
+    $sourcePath = utf8_decode($sourcePath);
+    $elementName = utf8_decode($elementName);
+
+    if(!(is_string($idUser)))
+        $idUser = (string)$idUser;
+
+    $sourceFSPath = PATH.$idUser.$sourcePath;
+    $sourceCompletePath = $sourceFSPath.$elementName;
+
+    $destinationFSPath = PATH.$idUser.'/Trash-'.$idUser.'/';
+    $destinationCompletePath = $destinationFSPath.$elementName;
+
+    //le dossier et élément source existent
+    if(file_exists($sourceCompletePath))
+    {
+        //le dossier de destination n'existe pas?
+        if(!(file_exists($destinationFSPath)))
+        {
+            //on le crée {@link http://fr2.php.net/manual/fr/function.mkdir.php}
+            $mkdirSuccessful = mkdir($destinationFSPath, 0777, TRUE);
+
+            if($mkdirSuccessful != TRUE)
+                return array('error' => 'Destination did not exist. We tried to create it but it failed');
+        }
+
+        //le nom de l'élément de destination est-il disponible?
+        if(file_exists($destinationCompletePath))
+            $destinationCompletePath .= time();
+
+        //@link http://www.php.net/manual/fr/function.rename.php
+        $renameSuccessful = rename($sourceCompletePath, $destinationCompletePath);
+
+        if($renameSuccessful != TRUE)
+            return array('error' => 'Move was not done successfully on file server.');
+        else return TRUE;
+    }
+    else return array('error' => 'Source element not found');
 }
