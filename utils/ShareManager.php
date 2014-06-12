@@ -49,8 +49,6 @@ function shareWithUser($idElement, $idOwner, $recipientEmail, $refRightCode, $se
         $userPdoManager = new UserPdoManager();
         $recipientUser = $userPdoManager->findOne($userCriteria);
 
-        if(is_array($recipientUser) && array_key_exists('error', $recipientUser))
-
         if($recipientUser instanceof User)
         {
             //récupérer l'id du refRight
