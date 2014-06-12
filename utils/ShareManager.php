@@ -50,7 +50,6 @@ function shareWithUser($idElement, $idOwner, $recipientEmail, $refRightCode, $se
         $recipientUser = $userPdoManager->findOne($userCriteria);
 
         if(is_array($recipientUser) && array_key_exists('error', $recipientUser))
-            echo "Cet utilisateur n'existe pas";
 
         if($recipientUser instanceof User)
         {
