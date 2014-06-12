@@ -622,7 +622,6 @@ class ElementPdoManager extends AbstractPdoManager implements ElementManagerInte
 
                                 $refRight = $refRightPdoManager->findById($element['right']['idRefRight']);
 
-
                                 if(!(array_key_exists('error', $refRight)))
                                 {
                                     $refRight = self::dismount($refRight);
