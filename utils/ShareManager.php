@@ -17,6 +17,8 @@
 /*
  * créer/modifier un partage avec un autre utilisateur
  */
+
+
 function shareWithUser($idElement, $idOwner, $recipientEmail, $refRightCode, $sendMail = FALSE)
 {
     $idElement = new MongoId($idElement);
@@ -46,6 +48,9 @@ function shareWithUser($idElement, $idOwner, $recipientEmail, $refRightCode, $se
 
         $userPdoManager = new UserPdoManager();
         $recipientUser = $userPdoManager->findOne($userCriteria);
+
+        if(is_array($recipientUser) && array_key_exists('error', $recipientUser))
+            echo "Cet utilisateur n'existe pas";
 
         if($recipientUser instanceof User)
         {
@@ -99,7 +104,7 @@ function shareWithUser($idElement, $idOwner, $recipientEmail, $refRightCode, $se
                             foreach($elementsInFolder as $elementInFolder)
                             {
                                 $rightCopy = $newRight;
-                                $rightCopy['idElement'] = $elementsInFolder->getId();
+                                $rightCopy['idElement'] = $elementInFolder->getId();
                                 $rightList[] = $rightCopy;
                             }
                         }
