@@ -637,23 +637,6 @@ class ElementPdoManager extends AbstractPdoManager implements ElementManagerInte
             if(empty($sharedElements))
                 return array('error' => 'No match found.');
         }
-//        elseif(array_key_exists('error',$rights))
-//        {
-//            return array('error' => 'azeaz');
-//        }            //return array('error' => 'No elements shared with you');
-//        else
             return $sharedElements;
-//        return $sharedElements;
-//        if($sharedElements['error'] == 'No match found.')
-//            return array('error' => 'No elements shared with you');
-//        else
-//            return $sharedElements;
-//
-//        return $sharedElements;
-        //        elseif($sharedElements['error'] == 'No match found.')
-//            return array('error' => 'No elements shared with you');
-
-
-
     }
 }
