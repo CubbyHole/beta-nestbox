@@ -517,7 +517,11 @@ class ElementPdoManager extends AbstractPdoManager implements ElementManagerInte
         return $rights;
     }
 
-    public function findSharedElements($idUser = NULL, $path = '/', $options = array())
+
+
+
+
+    public function findSharedElements($idUser = NULL, $path = 'all', $options = array())
     {
         $criteria = array(
             'state' => (int)1
@@ -546,7 +550,7 @@ class ElementPdoManager extends AbstractPdoManager implements ElementManagerInte
                     'state' => (int)1
                 );
 
-                if($path != '/')
+                if($path != 'all')
                 {
                     if(isset($options['recursivePath']) && $options['recursivePath'] == TRUE)
                         $elementCriteria['serverPath'] = new MongoRegex("/^$path/i");
@@ -616,17 +620,40 @@ class ElementPdoManager extends AbstractPdoManager implements ElementManagerInte
                             {
                                 $refRightPdoManager = new RefRightPdoManager();
 
-                                $refRight = $refRightPdoManager->findById($element['right']['_id']);
+                                $refRight = $refRightPdoManager->findById($element['right']['idRefRight']);
+
 
                                 if(!(array_key_exists('error', $refRight)))
+                                {
+                                    $refRight = self::dismount($refRight);
                                     $element['right']['idRefRight'] = $refRight;
+                                }
                             }
                         }
                         $sharedElements[] = $element;
                     }
                 }
             }
-            return $sharedElements;
+            if(empty($sharedElements))
+                return array('error' => 'No match found.');
         }
+//        elseif(array_key_exists('error',$rights))
+//        {
+//            return array('error' => 'azeaz');
+//        }            //return array('error' => 'No elements shared with you');
+//        else
+            return $sharedElements;
+//        return $sharedElements;
+//        if($sharedElements['error'] == 'No match found.')
+//            return array('error' => 'No elements shared with you');
+//        else
+//            return $sharedElements;
+//
+//        return $sharedElements;
+        //        elseif($sharedElements['error'] == 'No match found.')
+//            return array('error' => 'No elements shared with you');
+
+
+
     }
 }

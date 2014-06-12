@@ -62,7 +62,7 @@ function shareWithUser($idElement, $idOwner, $recipientEmail, $refRightCode, $se
             {
                 $rightList = array();
 
-                $refRightId = $refRightCriteria['id'];
+                $refRightId = $refRight['_id']; /////////// modification ici -> $refRight au lieu de $refRightCriteria
 
                 $newRight = array(
                     'state' => (int)1,
