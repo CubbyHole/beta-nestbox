@@ -503,7 +503,9 @@ function disableHandler($idElement, $idUser, $returnImpactedElements = FALSE)
                 {
                     //récupère le code du refElement de notre élément
                     $refElementPdoManager = new RefElementPdoManager();
-                    $refElement = $refElementPdoManager->findById($element->getRefElement(), array('code' => TRUE));
+
+                    $fieldsToReturn = array('code' => TRUE, 'extension' => TRUE);
+                    $refElement = $refElementPdoManager->findById($element->getRefElement(), $fieldsToReturn);
 
                     if(!(array_key_exists('error', $refElement)))
                     {
@@ -511,7 +513,7 @@ function disableHandler($idElement, $idUser, $returnImpactedElements = FALSE)
                         if(preg_match('/^4/', $refElement['code']) || preg_match('/^9/', $refElement['code'])) // dossier ou non reconnu, pas d'extension à rajouter
                             $elementName = $element->getName();
                         else
-                            $elementName = $element->getName().'.'.$refElement['extension'];
+                            $elementName = $element->getName().$refElement['extension'];
 
                         $FSdisableResult = moveToTrash($idUser, $element->getServerPath(), $elementName);
 
