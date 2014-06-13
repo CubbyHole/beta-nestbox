@@ -99,9 +99,9 @@ $insert = array(
     //fichier js dans /Nestbox/code/js/front/
     array(
         'state' => 1,
-        'name' => 'test',
+        'name' => 'js',
         'idOwner' => new MongoId('536749adedb5025416000029'),
-        'idRefElement' => new MongoId('53639f93edb5021808000076'), //fichier non reconnu
+        'idRefElement' => new MongoId('539b0c4eedb502ac0d000044'), //fichier texte
         'serverPath' => '/Nestbox/code/js/front/',
         'size' => fileSize64($path.'Nestbox/code/js/front/js.txt'),
         'hash' => sha1_file($path.'Nestbox/code/js/front/js.txt'),
@@ -120,7 +120,7 @@ $insert = array(
         'state' => 1,
         'name' => 'test',
         'idOwner' => new MongoId('536749adedb5025416000029'),
-        'idRefElement' => new MongoId('53639f93edb5021808000076'), //fichier non reconnu
+        'idRefElement' => new MongoId('539b0c4eedb502ac0d000044'), //fichier texte
         'serverPath' => '/Nestbox/code/css/',
         'size' => fileSize64($path.'Nestbox/code/css/test.txt'),
         'hash' => sha1_file($path.'Nestbox/code/css/test.txt'),
@@ -131,10 +131,10 @@ $insert = array(
         'state' => 1,
         'name' => 'suivi de projet',
         'idOwner' => new MongoId('536749adedb5025416000029'),
-        'idRefElement' => new MongoId('53639f93edb5021808000076'), //fichier non reconnu
+        'idRefElement' => new MongoId('53639f93edb5021808000058'), //fichier non reconnu
         'serverPath' => '/Nestbox/',
-        'size' => fileSize64($path.'Nestbox/suivi de projet.gdoc'),
-        'hash' => sha1_file($path.'Nestbox/suivi de projet.gdoc'),
+        'size' => fileSize64($path.'Nestbox/suivi de projet.doc'),
+        'hash' => sha1_file($path.'Nestbox/suivi de projet.doc'),
         'downloadLink' => ''
     ),
     //fichier liens upload dans /Nestbox/
@@ -142,10 +142,10 @@ $insert = array(
         'state' => 1,
         'name' => 'liens upload',
         'idOwner' => new MongoId('536749adedb5025416000029'),
-        'idRefElement' => new MongoId('53639f93edb5021808000076'), //fichier non reconnu
+        'idRefElement' => new MongoId('53639f93edb5021808000058'), //fichier non reconnu
         'serverPath' => '/Nestbox/',
-        'size' => fileSize64($path.'Nestbox/liens upload.gdoc'),
-        'hash' => sha1_file($path.'Nestbox/liens upload.gdoc'),
+        'size' => fileSize64($path.'Nestbox/liens upload.doc'),
+        'hash' => sha1_file($path.'Nestbox/liens upload.doc'),
         'downloadLink' => ''
     ),
     //fichier Explorateur de fichier dans /Nestbox/
@@ -153,10 +153,10 @@ $insert = array(
         'state' => 1,
         'name' => 'Explorateur de fichier',
         'idOwner' => new MongoId('536749adedb5025416000029'),
-        'idRefElement' => new MongoId('53639f93edb5021808000076'), //fichier non reconnu
+        'idRefElement' => new MongoId('53639f93edb5021808000058'), //fichier non reconnu
         'serverPath' => '/Nestbox/',
-        'size' => fileSize64($path.'Nestbox/Explorateur de fichier.gdoc'),
-        'hash' => sha1_file($path.'Nestbox/Explorateur de fichier.gdoc'),
+        'size' => fileSize64($path.'Nestbox/Explorateur de fichier.doc'),
+        'hash' => sha1_file($path.'Nestbox/Explorateur de fichier.doc'),
         'downloadLink' => ''
     ),
 	//fichier Carte à la racine
