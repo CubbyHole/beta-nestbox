@@ -508,7 +508,12 @@ function disableHandler($idElement, $idUser, $returnImpactedElements = FALSE)
                     if(!(array_key_exists('error', $refElement)))
                     {
                         //File Server -- 13/06/2014
-                        $FSdisableResult = moveToTrash($idUser, $element->getServerPath(), $element->getName());
+                        if(preg_match('/^4/', $refElement['code']) || preg_match('/^9/', $refElement['code'])) // dossier ou non reconnu, pas d'extension à rajouter
+                            $elementName = $element->getName();
+                        else
+                            $elementName = $element->getName().'.'.$refElement['extension'];
+
+                        $FSdisableResult = moveToTrash($idUser, $element->getServerPath(), $elementName);
 
                         if(!(is_bool($FSdisableResult)) || $FSdisableResult != TRUE)
                             return $FSdisableResult;

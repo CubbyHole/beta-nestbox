@@ -226,7 +226,7 @@ function createFSDirectory($idUser, $path, $name)
         $mkdirSuccessful = mkdir($FSPath, 0777, TRUE);
 
         if($mkdirSuccessful != TRUE)
-            return array('error' => 'Destination did not exist. We tried to create it but it failed');
+            return array('error' => 'Destination does not exist. We tried to create it but it failed');
     }
 
     $mkdirSuccessful = mkdir($completeFSPath, 0777, TRUE);
