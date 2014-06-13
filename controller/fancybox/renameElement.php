@@ -8,29 +8,33 @@ require_once $projectRoot.'/required.php';
  * Date: 05/06/14
  * Time: 12:36
  */
+?>
+<script type="text/javascript">
+    function renameElement() {
+        var data = 'idElement='+$("#idElement").select().val()+'&newName='+$("#newName").select().val();
+        jQuery.ajax({
+            type: 'POST',
+            url: './controller/actions/renameElement.php',
+            data: data
+        }).success(function(msg){
+                $("#results").html(msg);
+//                parent.location.reload(true);//                alert(data); 
+            });
+    }
 
-/** - Renomme un fichier ou un dossier
- * @author Harry Bellod
- * @param $name | nom du fichier/dossier qu'on renomme
- * @param $dir | dossier courant
- * @since 03/06/2014
- */
-//function renameElement($elementId, $newName, $userId)
-//{
-//    $elementManager = new ElementPdoManager();
-//    $elementId = new MongoId($elementId);
-//    $searchQuery = array('_id' => $elementId, 'idOwner' => $userId, 'state' => 1);
-//    $updateCriteria = array(
-//        '$set' => array('name' => $newName)
-//    );
-//    $options = array('new' => true);
-//    $elementManager->findAndModify($searchQuery, $updateCriteria, $options);
-////        var_dump($newName);
-////        var_dump($e);
-////        var_dump($searchQuery);
-////        header('Location: /Nestbox');
-//}
+</script>
 
+
+<div id="utils_fancybox">
+    <div id="imageClose">
+        <img src="./content/img/icon_close_box.png" onclick="closeBoxAndReload();"/>
+    </div>
+    <div id="infosElement">
+        <span class="glyphicon glyphicon-info-sign" onclick="elementInformation();"></span>
+    </div>
+</div>
+
+<?php
 if( isset($_POST['var']) && !empty($_POST['var']) )
 {
     $elementManager = new ElementPdoManager();
@@ -42,8 +46,9 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     $refElement = $refElementManager->findById($element->getRefElement());
     $user = $userManager->findById($element->getOwner());
 
-    echo '<p><label name="description">Element information:</label></p>';
+
     echo '<div id="elementInformations">
+            <p><label name="description">Element information:</label></p>
                 <ul>
                     <li>Element name : '.$element->getName().'</li>
                     <li>Current directory : '.$element->getServerPath().'</li>
@@ -57,13 +62,14 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     <form id="submitRename" method="POST">
         <?php
         echo '<p><label name="nameRename">Enter a new name:</label></p>';
-        echo '<input type="hidden" name="idElement" value="'.$_GET['id'].'" read-only>
-              <input type="text" name="newName" value="'.$element->getName().'">';
+        echo '<input type="hidden" name="idElement" id="idElement" value="'.$_GET['id'].'" read-only>
+              <input type="text" name="newName" id="newName" value="'.$element->getName().'">';
         ?>
         <br /><br />
-        <p style="text-align: center;"><input type="submit" class="btn-success btn" value="Rename" name="renameElem">
+        <p style="text-align: center;"><input type="button" onclick="renameElement();" class="btn-success btn" value="Rename" name="renameElem">
         <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel"></p>
     </form>
+    <div id="results"></div>
 <?php
 }
 ?>

@@ -14,6 +14,33 @@ require_once $projectRoot.'/required.php';
 if(isset($_SESSION['userId']))
     $userId = $_SESSION['userId'];
 
+?>
+
+<script type="text/javascript">
+    function downloadElement() {
+        var data = 'idElement='+$("#idElement").select().val();
+        jQuery.ajax({
+            type: 'POST',
+            url: './controller/actions/downloadElement.php',
+            data: data
+        }).success(function(msg){
+                $("#results").html(msg);
+//                alert(data); 
+            });
+    }
+</script>
+
+
+<div id="utils_fancybox">
+    <div id="imageClose">
+        <img src="./content/img/icon_close_box.png" onclick="closeBoxAndReload();"/>
+    </div>
+    <div id="infosElement">
+        <span class="glyphicon glyphicon-info-sign" onclick="elementInformation();"></span>
+    </div>
+</div>
+
+<?php
 if( isset($_POST['var']) && !empty($_POST['var']) )
 {
     $elementManager = new ElementPdoManager();
@@ -43,8 +70,8 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     $refElement = $refElementManager->findById($element->getRefElement());
     $user = $userManager->findById($element->getOwner());
 
-    echo '<p><label name="description">Element information:</label></p>';
-    echo '<div id="elementInformations">
+   echo '<div id="elementInformations">
+                <p><label name="description">Element information:</label></p>
                 <ul>
                     <li>Element name : '.$element->getName().'</li>
                     <li>Current directory : '.$element->getServerPath().'</li>
@@ -58,10 +85,11 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     <!-- formulaire pour déplacer -->
     <form id="submitDownload" method="POST">
         <?php
-            echo '<input type="hidden" name="idElement" value="'.$_GET['id'].'" read-only>';
+            echo '<input type="hidden" name="idElement" id="idElement" value="'.$_GET['id'].'" read-only>';
         ?>
-        <p style="text-align: center;"><input type="submit" class="btn-success btn" value="Download" name="downloadElem">
+        <p style="text-align: center;"><input type="button" onclick="downloadElement();" class="btn-success btn" value="Download" name="downloadElem">
         <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel"></p>
     </form>
+    <div id="results"></div>
 <?php
 }?>

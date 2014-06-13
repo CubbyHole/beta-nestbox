@@ -155,15 +155,31 @@ require_once $projectRoot.'/required.php';
     document.getElementById('files').addEventListener('change', handle_file_select, false);
 }());
 
-
-<!--        jQuery(function($)-->
-<!--        {-->
-<!--            $('.dropfile').dropfile({-->
-<!---->
-<!--            });-->
-<!--        });-->
+function uploadElement() {
+    var data = 'destination='+$("#destination").select().val()+'&directory='+$("#directory").select().val(); // voir ce qu'on doit récupérer avec Alban
+    jQuery.ajax({
+        type: 'POST',
+        url: './controller/actions/uploadElement.php',
+        data: data
+    }).success(function(msg){
+            $("#results").html(msg);
+//                alert(data); 
+        });
+}
     </script>
+
+<div id="utils_fancybox">
+<div id="imageClose">
+    <img src="./content/img/icon_close_box.png" onclick="closeBoxAndReload();"/>
+</div>
+<div id="infosElement">
+    <span class="glyphicon glyphicon-info-sign" onclick="elementInformation();"></span>
+</div>
+</div>
+
 <?php
+if( isset($_POST['var']) && !empty($_POST['var']) )
+{
     $elementManager = new ElementPdoManager();
     $refElementManager = new RefElementPdoManager();
     $refElementEmptyDirectory = $refElementManager->findOne(array(
@@ -193,34 +209,13 @@ function cmp($a,$b)
     return strcmp($a, $b);
 }
 
-/**
- * Fonction d'upload
- * @author Harry Bellod
- * @param array|Element $name de l'élément qu'on veut copier/couper
- * @param array|Element $dir dossier courant ou l'on veut coller
- * @since 28/05/2014
- */
-//function uploadElement($filename, $userId, $filetype, $filesize, $dir)
-//{
-//    $refElementManager = new RefElementPdoManager();
-//    $explode = explode("/", $filetype);
-//    $ext = $explode[sizeof($explode)-1];
-//
-//    $refElement = $refElementManager->findOne(array('extension' => '.'.$ext));
-//    var_dump($filename);
-//    var_dump($ext);
-//    var_dump($dir);
-//
-//}
 
 ?>
 
     <!--  formulaire pour la création de dossier -->
         <form id="submitUpload" method="POST" enctype="multipart/form-data">
-        <?php echo '<input type="hidden" name="currentDirectory" value="'.$_GET['dir'].'" readonly>'; ?>
-<!--        <p><label>Select a file :</label>-->
-<!--        <input type="file" name="element"></p>-->
-<!--        <div class="dropfile"></div>-->
+        <?php echo '<input type="hidden" name="currentDirectory" id="directory" value="'.$_GET['dir'].'" readonly>'; ?>
+
             <div id="drop_zone" class="alert alert-block alert-success pagination-centered">
                 <h1 style="text-align: center">Drop files here or click for select</h1>
             </div>
@@ -266,7 +261,12 @@ function cmp($a,$b)
                 echo '</select>';
         ?>
         <br /><br />
-        <input type="submit" class="btn-success btn" value="Upload" name="uploadElem">
+        <input type="button" class="btn-success btn" onclick="uploadElement();" value="Upload" name="uploadElem">
         <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel"></div>
         <div id="informationElementToUpload"></div>
     </form>
+    <div id="results"></div>
+
+<?php
+}
+?>

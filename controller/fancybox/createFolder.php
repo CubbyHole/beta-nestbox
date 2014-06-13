@@ -9,6 +9,39 @@ require_once $projectRoot.'/required.php';
  * Date: 05/06/14
  * Time: 12:36
  */
+?>
+<script type="text/javascript">
+    function createFolder() {
+        var data = 'nameNewFolder='+$("#nameNewFolder").select().val()+'&directory='+$("#currentDirectory").select().val();
+        jQuery.ajax({
+            type: 'POST',
+            url: './controller/actions/createFolder.php',
+            data: data
+        }).success(function(msg){
+                $("#results").html(msg);
+                if(msg != "Folder name not available.")
+                {
+                    $("#createNewFolder").css({
+                       'display':'none'
+                    });
+                    $("#cancel").css({
+                        'display':'none'
+                    });
+                }
+            });
+    }
+</script>
+
+
+<div id="utils_fancybox">
+    <div id="imageClose">
+        <img src="./content/img/icon_close_box.png" onclick="closeBoxAndReload();"/>
+    </div>
+    <div id="infosElement">
+        <span class="glyphicon glyphicon-info-sign" onclick="elementInformation();"></span>
+    </div>
+</div>
+<?php
 
 if( isset($_POST['var']) && !empty($_POST['var']) )
 {
@@ -20,15 +53,14 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     ?>
     <!--  formulaire pour la création de dossier -->
     <form id="newFolder" method="POST">
-        <?php echo '<input type="hidden" name="currentDirectory" value="'.$_GET['dir'].'" readonly>'; ?>
+        <?php echo '<input type="hidden" name="currentDirectory" id="currentDirectory" value="'.$_GET['dir'].'" readonly>'; ?>
         <p><label name="enterAName">Enter a name for the new folder: </label></p>
-        <input type="text" name="nameNewFolder" placeholder="Folder name">
+        <input type="text" name="nameNewFolder" id="nameNewFolder" placeholder="Folder name">
         <br /><br />
-        <input type="submit" class="btn-success btn" value="Create new folder" name="createNewFolder">
-        <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel">
+        <input type="button" onclick="createFolder();" class="btn-success btn" value="Create new" name="createNewFolder" id="createNewFolder">
+        <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel" name="cancel" id="cancel">
     </form>
+    <div id="results"></div>
 <?php
 }
-else
-    echo "coucou";
 ?>
