@@ -770,144 +770,154 @@ function copyHandler($idElement, $idUser, $path, $options = array())
 
                     if(is_string($elementNameInDestination))
                     {
-                        $isElementAFolder = isFolder($element->getRefElement(), TRUE);
+                        //File Server -- 13/06/2014
+                        $refElementPdoManager = new RefElementPdoManager();
+                        $refElementFieldsToReturn = array('code' => TRUE, 'extension' => TRUE);
+                        $refElement = $refElementPdoManager->findById($element->getRefElement(), $refElementFieldsToReturn);
 
-                        if(!(is_array($isElementAFolder))) //pas d'erreur
+                        if(array_key_exists('error', $refElement))
+                            return $refElement;
+
+                        //dossier ou non reconnu, pas d'extension à rajouter
+                        if(preg_match('/^4/', $refElement['code']) || preg_match('/^9', $refElement['code']))
+                            $completeName = $elementNameInDestination;
+                        else
+                            $completeName = $elementNameInDestination.$refElement['extension'];
+
+                        $FSCopyResult = copyFSElement($idUser, $completeName, $element->getServerPath(), $path);
+
+                        if(!(is_bool($FSCopyResult)) || $FSCopyResult != TRUE)
+                            return $FSCopyResult;
+                        //Fin File Server
+
+                        //récupérer la valeur de storage de l'utilisateur
+                        $accountPdoManager = new AccountPdoManager();
+
+                        $accountCriteria = array(
+                            'state' => (int)1,
+                            'idUser' => $idUser
+                        );
+
+                        $fieldsToReturn = array(
+                            'storage' => TRUE,
+                            'idRefPlan' => TRUE
+                        );
+
+                        $account = $accountPdoManager->findOne($accountCriteria, $fieldsToReturn);
+
+                        if(!(array_key_exists('error', $account)))
                         {
-                            //récupérer la valeur de storage de l'utilisateur
-                            $accountPdoManager = new AccountPdoManager();
+                            $currentUserStorage = $account['storage'];
 
-                            $accountCriteria = array(
+                            //récupérer le stockage maximum autorisé par le plan de l'utilisateur
+                            $refPlanPdoManager = new RefPlanPdoManager();
+
+                            $refPlan = $refPlanPdoManager->findById($account['idRefPlan'], array('maxStorage' => TRUE));
+
+                            if(!(array_key_exists('error', $refPlan)))
+                                $maxStorageAllowed = $refPlan['maxStorage'];
+                            else
+                                return prepareCopyReturn($options, $operationSuccess, $refPlan, $impactedElements, $pastedElements, $failedToPaste);
+                        }
+                        else return prepareCopyReturn($options, $operationSuccess, $account, $impactedElements, $pastedElements, $failedToPaste);
+
+                        if($refElement['code'] != '4002' && preg_match('/^4/', $refElement['code'])) //l'élément est un dossier non vide
+                        {
+                            $serverPath = $element->getServerPath().$element->getName().'/';
+
+                            //récupération des éléments contenus dans le dossier
+                            $seekElementsInFolder = array(
                                 'state' => (int)1,
-                                'idUser' => $idUser
+                                'serverPath' => new MongoRegex("/^$serverPath/i"),
+                                'idOwner' => $idUser
                             );
 
-                            $fieldsToReturn = array(
-                                'storage' => TRUE,
-                                'idRefPlan' => TRUE
-                            );
+                            $elementsInFolder = $elementPdoManager->find($seekElementsInFolder);
+                        }
 
-                            $account = $accountPdoManager->findOne($accountCriteria, $fieldsToReturn);
+                        if(isset($elementsInFolder) && !(array_key_exists('error', $elementsInFolder)))
+                            $impactedElements = $elementsInFolder;
 
-                            if(!(array_key_exists('error', $account)))
+                        $impactedElements[] = $element;
+
+                        $totalSize = sumSize($impactedElements); //calcul de la taille du contenu
+
+                        if($currentUserStorage + $totalSize <= $maxStorageAllowed) //copie autorisée
+                        {
+                            $count = 0;
+
+                            foreach($impactedElements as $key => $impactedElement)
                             {
-                                $currentUserStorage = $account['storage'];
+                                //préparation de la copie
+                                $elementCopy = clone $impactedElement;
+                                $elementCopy->setId(new MongoId());
 
-                                //récupérer le stockage maximum autorisé par le plan de l'utilisateur
-                                $refPlanPdoManager = new RefPlanPdoManager();
-
-                                $refPlan = $refPlanPdoManager->findById($account['idRefPlan'], array('maxStorage' => TRUE));
-
-                                if(!(array_key_exists('error', $refPlan)))
-                                    $maxStorageAllowed = $refPlan['maxStorage'];
-                                else
-                                    return prepareCopyReturn($options, $operationSuccess, $refPlan, $impactedElements, $pastedElements, $failedToPaste);
-                            }
-                            else return prepareCopyReturn($options, $operationSuccess, $account, $impactedElements, $pastedElements, $failedToPaste);
-
-                            if($isElementAFolder == TRUE) //l'élément est un dossier non vide
-                            {
-                                $serverPath = $element->getServerPath().$element->getName().'/';
-
-                                //récupération des éléments contenus dans le dossier
-                                $seekElementsInFolder = array(
-                                    'state' => (int)1,
-                                    'serverPath' => new MongoRegex("/^$serverPath/i"),
-                                    'idOwner' => $idUser
-                                );
-
-                                $elementsInFolder = $elementPdoManager->find($seekElementsInFolder);
-                            }
-
-
-                            if(isset($elementsInFolder) && !(array_key_exists('error', $elementsInFolder)))
-                                $impactedElements = $elementsInFolder;
-
-
-                            $impactedElements[] = $element;
-
-                            $totalSize = sumSize($impactedElements); //calcul de la taille du contenu
-
-                            if($currentUserStorage + $totalSize <= $maxStorageAllowed) //copie autorisée
-                            {
-                                $count = 0;
-
-                                foreach($impactedElements as $key => $impactedElement)
-                                {
-                                    //préparation de la copie
-                                    $elementCopy = clone $impactedElement;
-                                    $elementCopy->setId(new MongoId());
-
-                                    if(count($impactedElements) != $key+1)
-                                    {$explode = explode($serverPath, $elementCopy->getServerPath());
-                                        if(isset($explode[1]) && $explode[1] != '')
-                                        {
-                                            $elementPath = $path.$elementNameInDestination.'/'.$explode[1];
-                                            $elementCopy->setServerPath($elementPath);
-                                        }
-                                        else
-                                            $elementCopy->setServerPath($path.$elementNameInDestination.'/');
+                                if(count($impactedElements) != $key+1)
+                                {$explode = explode($serverPath, $elementCopy->getServerPath());
+                                    if(isset($explode[1]) && $explode[1] != '')
+                                    {
+                                        $elementPath = $path.$elementNameInDestination.'/'.$explode[1];
+                                        $elementCopy->setServerPath($elementPath);
                                     }
                                     else
-                                    {
-                                        $elementCopy->setName($elementNameInDestination);
-                                        $elementCopy->setServerPath($path);
-                                    }
-
-                                    $elementCopy->setDownloadLink('');
-
-                                    //insertion de la copie
-                                    $copyResult = $elementPdoManager->create($elementCopy);
-
-                                    //gestion des erreurs
-
-                                    if(!(is_bool($copyResult))) //erreur
-                                    {
-                                        $failedToPaste[$count]['elementToCopy'] = $impactedElement;
-                                        $failedToPaste[$count]['elementCopy'] = $elementCopy;
-                                        $failedToPaste[$count]['error'] = $copyResult['error'];
-                                        $count++;
-                                    }
-                                    elseif($copyResult == TRUE)
-                                        $pastedElements[] = $elementCopy;
+                                        $elementCopy->setServerPath($path.$elementNameInDestination.'/');
                                 }
-
-                                if($totalSize > 0)
+                                else
                                 {
-                                    $updateCriteria = array(
-                                        '_id' => $account['_id'],
-                                        'state' => (int)1
-                                    );
-                                    $storageUpdate = array('$inc' => array('storage' => $totalSize));
-                                    $accountUpdate = $accountPdoManager->update($updateCriteria, $storageUpdate);
-
-                                    if(is_array($accountUpdate) && array_key_exists('error', $accountUpdate))
-                                    {
-                                        $errorMessage = 'Error when trying to add '.$totalSize.' to user account';
-                                        return prepareCopyReturn($options, $operationSuccess, $errorMessage, $impactedElements, $pastedElements, $failedToPaste);
-                                    }
+                                    $elementCopy->setName($elementNameInDestination);
+                                    $elementCopy->setServerPath($path);
                                 }
 
-                                // Lors de copie dans un dossier, on vérifie si le dossier était empty. Au quel cas on le passe à NotEmpty
-                                updateFolderStatus($path, $idUser);
+                                $elementCopy->setDownloadLink('');
 
-                                if(array_key_exists('keepRights', $options) && $options['keepRights'] == TRUE)
-                                    copyRights($impactedElements, $pastedElements);
+                                //insertion de la copie
+                                $copyResult = $elementPdoManager->create($elementCopy);
 
-                                //@todo copie sur le serveur de fichier
+                                //gestion des erreurs
 
-                                $operationSuccess = TRUE;
-
-                                return prepareCopyReturn($options, $operationSuccess, array(), $impactedElements, $pastedElements, $failedToPaste);
-
-                            } //pas assez d'espace
-                            else
-                            {
-                                $errorMessage = 'Not enough space available for your account to proceed action';
-                                return prepareCopyReturn($options, $operationSuccess, $errorMessage, $impactedElements, $pastedElements, $failedToPaste);
+                                if(!(is_bool($copyResult))) //erreur
+                                {
+                                    $failedToPaste[$count]['elementToCopy'] = $impactedElement;
+                                    $failedToPaste[$count]['elementCopy'] = $elementCopy;
+                                    $failedToPaste[$count]['error'] = $copyResult['error'];
+                                    $count++;
+                                }
+                                elseif($copyResult == TRUE)
+                                    $pastedElements[] = $elementCopy;
                             }
+
+                            if($totalSize > 0)
+                            {
+                                $updateCriteria = array(
+                                    '_id' => $account['_id'],
+                                    'state' => (int)1
+                                );
+                                $storageUpdate = array('$inc' => array('storage' => $totalSize));
+                                $accountUpdate = $accountPdoManager->update($updateCriteria, $storageUpdate);
+
+                                if(is_array($accountUpdate) && array_key_exists('error', $accountUpdate))
+                                {
+                                    $errorMessage = 'Error when trying to add '.$totalSize.' to user account';
+                                    return prepareCopyReturn($options, $operationSuccess, $errorMessage, $impactedElements, $pastedElements, $failedToPaste);
+                                }
+                            }
+
+                            // Lors de copie dans un dossier, on vérifie si le dossier était empty. Au quel cas on le passe à NotEmpty
+                            updateFolderStatus($path, $idUser);
+
+                            if(array_key_exists('keepRights', $options) && $options['keepRights'] == TRUE)
+                                copyRights($impactedElements, $pastedElements);
+
+                            $operationSuccess = TRUE;
+
+                            return prepareCopyReturn($options, $operationSuccess, array(), $impactedElements, $pastedElements, $failedToPaste);
+
+                        } //pas assez d'espace
+                        else
+                        {
+                            $errorMessage = 'Not enough space available for your account to proceed action';
+                            return prepareCopyReturn($options, $operationSuccess, $errorMessage, $impactedElements, $pastedElements, $failedToPaste);
                         }
-                        else return prepareCopyReturn($options, $operationSuccess, $isElementAFolder, $impactedElements, $pastedElements, $failedToPaste);
                     }
                     else return prepareCopyReturn($options, $operationSuccess, $elementNameInDestination, $impactedElements, $pastedElements, $failedToPaste);
                 }
