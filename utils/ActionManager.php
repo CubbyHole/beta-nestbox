@@ -479,7 +479,6 @@ function prepareCopyReturn($options, $operationSuccess, $error, $elementsImpacte
  * @param bool $returnImpactedElements si TRUE, retourne les éléments impactés par l'action
  * @since 31/05/2014
  * @return array|Element
- * @todo appel de la fonction qui fait diverses tâches (cf. documentation) sur le serveur de fichier
  */
 
 function disableHandler($idElement, $idUser, $returnImpactedElements = FALSE)
@@ -508,6 +507,13 @@ function disableHandler($idElement, $idUser, $returnImpactedElements = FALSE)
 
                     if(!(array_key_exists('error', $refElement)))
                     {
+                        //File Server -- 13/06/2014
+                        $FSdisableResult = moveToTrash($idUser, $element->getServerPath(), $element->getName());
+
+                        if(!(is_bool($FSdisableResult)) || $FSdisableResult != TRUE)
+                            return $FSdisableResult;
+                        //-- Fin File Server
+
                         //si le code commence par un 4 (les codes de dossier commencent par un 4) et n'est pas 4002 (dossier vide)
                         if(preg_match('/^4/', $refElement['code']) && $refElement['code'] != '4002')
                         {
