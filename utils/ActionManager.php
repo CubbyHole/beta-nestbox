@@ -1033,78 +1033,88 @@ function renameHandler($idElement, $idUser, $newName, $options = array())
                     $elementsWithSameName = $elementPdoManager->find($criteria);
 
                     if(is_array($elementsWithSameName) && array_key_exists('error', $elementsWithSameName))
+                        return $elementsWithSameName;
+
+                    //File Server -- 13/06/2014
+                    $refElementPdoManager = new RefElementPdoManager();
+                    $refElementFieldsToReturn = array('code' => TRUE, 'extension' => TRUE);
+                    $refElement = $refElementPdoManager->findById($element->getRefElement(), $refElementFieldsToReturn);
+
+                    if(array_key_exists('error', $refElement))
+                        return $refElement;
+
+                    if(preg_match('/^4/', $refElement['code']) || preg_match('/^9/', $refElement['code'])) // dossier ou non reconnu, pas d'extension à rajouter
+                        $oldCompleteName = $element->getName();
+                    else
                     {
-                        if($elementsWithSameName['error'] != 'No match found.')
-                            return $elementsWithSameName;
+                        $oldCompleteName = $element->getName().$refElement['extension'];
+                        $newCompleteName = $element->getName().$refElement['extension'];
                     }
-                    //@todo rename sur le serveur de fichier et obtention du nouveau hash si l'élément est un dossier. Puis màj de ce hash
 
-                    $isFolder = isFolder($element->getRefElement(), TRUE);
+                    $FSRenameResult = renameFSElement($idUser, $element->getServerPath(), $oldCompleteName, $newCompleteName);
 
-                    if(!(is_array($isFolder))) //pas d'erreur
+                    if(!(is_bool($FSRenameResult)) || $FSRenameResult != TRUE)
+                        return $FSRenameResult;
+                    //Fin File Server
+
+                    if($refElement['code'] != '4002' && (preg_match('/^4/', $refElement['code']))) //pas un dossier vide
                     {
-                        if($isFolder == TRUE) //l'élément est un dossier
-                        {
-                            $serverPath = $element->getServerPath().$element->getName().'/';
+                        $serverPath = $element->getServerPath().$element->getName().'/';
 
-                            //récupération des éléments contenus dans le dossier
-                            $seekElementsInFolder = array(
-                                'state' => (int)1,
-                                'serverPath' => new MongoRegex("/^$serverPath/i"),
-                                'idOwner' => $idUser
-                            );
+                        //récupération des éléments contenus dans le dossier
+                        $seekElementsInFolder = array(
+                            'state' => (int)1,
+                            'serverPath' => new MongoRegex("/^$serverPath/i"),
+                            'idOwner' => $idUser
+                        );
 
-                            $elementsInFolder = $elementPdoManager->find($seekElementsInFolder);
-                        }
-
-
-                        if(isset($elementsInFolder) && !(array_key_exists('error', $elementsInFolder)))
-                            $impactedElements = $elementsInFolder;
-
-
-                        $impactedElements[] = $element;
-
-                        $count = 0;
-
-                        foreach($impactedElements as $key => $impactedElement)
-                        {
-                            $updateCriteria = array(
-                                '_id' => $impactedElement->getId(),
-                                'state' => (int)1
-                            );
-                            //préparation de la copie
-                            $elementCopy = clone $impactedElement;
-
-                            if(count($impactedElements) != $key+1)
-                            {
-                                $impactedElementPath = $impactedElement->getServerPath();
-                                $newPath = preg_replace('/'.$element->getName().'/i', $newName, $impactedElementPath);
-                                $elementCopy->setServerPath($newPath);
-                            }
-                            else
-                                $elementCopy->setName($newName);
-
-                            //mise à jour
-                            $updateResult = $elementPdoManager->update($updateCriteria, $elementCopy);
-
-                            //gestion des erreurs
-
-                            if(!(is_bool($updateResult))) //erreur
-                            {
-                                $failedToUpdate[$count]['elementToUpdate'] = $impactedElement;
-                                $failedToUpdate[$count]['elementUpdated'] = $elementCopy;
-                                $failedToUpdate[$count]['error'] = $updateResult['error'];
-                                $count++;
-                            }
-                            elseif($updateResult == TRUE)
-                                $updatedElements[] = $elementCopy;
-                        }
-
-                        $operationSuccess = TRUE;
-
-                        return prepareRenameReturn($options, $operationSuccess, array(), $impactedElements, $updatedElements, $failedToUpdate);
+                        $elementsInFolder = $elementPdoManager->find($seekElementsInFolder);
                     }
-                    else return prepareRenameReturn($options, $operationSuccess, $isFolder, $impactedElements, $updatedElements, $failedToUpdate);
+
+                    if(isset($elementsInFolder) && !(array_key_exists('error', $elementsInFolder)))
+                        $impactedElements = $elementsInFolder;
+
+                    $impactedElements[] = $element;
+
+                    $count = 0;
+
+                    foreach($impactedElements as $key => $impactedElement)
+                    {
+                        $updateCriteria = array(
+                            '_id' => $impactedElement->getId(),
+                            'state' => (int)1
+                        );
+                        //préparation de la copie
+                        $elementCopy = clone $impactedElement;
+
+                        if(count($impactedElements) != $key+1)
+                        {
+                            $impactedElementPath = $impactedElement->getServerPath();
+                            $newPath = preg_replace('/'.$element->getName().'/i', $newName, $impactedElementPath);
+                            $elementCopy->setServerPath($newPath);
+                        }
+                        else
+                            $elementCopy->setName($newName);
+
+                        //mise à jour
+                        $updateResult = $elementPdoManager->update($updateCriteria, $elementCopy);
+
+                        //gestion des erreurs
+
+                        if(!(is_bool($updateResult))) //erreur
+                        {
+                            $failedToUpdate[$count]['elementToUpdate'] = $impactedElement;
+                            $failedToUpdate[$count]['elementUpdated'] = $elementCopy;
+                            $failedToUpdate[$count]['error'] = $updateResult['error'];
+                            $count++;
+                        }
+                        elseif($updateResult == TRUE)
+                            $updatedElements[] = $elementCopy;
+                    }
+
+                    $operationSuccess = TRUE;
+
+                    return prepareRenameReturn($options, $operationSuccess, array(), $impactedElements, $updatedElements, $failedToUpdate);
                 }
                 else return prepareRenameReturn($options, $operationSuccess, array('error' => 'Element inactivated, nothing to do'), $impactedElements, $updatedElements, $failedToUpdate);
             }
