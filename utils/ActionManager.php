@@ -940,10 +940,13 @@ function prepareRenameReturn($options, $operationSuccess, $error, $elementsImpac
 
     $return['operationSuccess'] = $operationSuccess;
 
-    if(is_array($error) && array_key_exists('error', $error))
-        $return['error'] = $error['error'];
-    else
-        $return['error'] = $error;
+    if(!(empty($error)))
+    {
+        if(is_array($error) && array_key_exists('error', $error))
+            $return['error'] = $error['error'];
+        else
+            $return['error'] = $error;
+    }
 
     if(is_array($options))
     {
@@ -1032,8 +1035,14 @@ function renameHandler($idElement, $idUser, $newName, $options = array())
 
                     $elementsWithSameName = $elementPdoManager->find($criteria);
 
-                    if(is_array($elementsWithSameName) && array_key_exists('error', $elementsWithSameName))
-                        return $elementsWithSameName;
+                    if(array_key_exists('error', $elementsWithSameName))
+                    {
+                        if($elementsWithSameName['error'] != 'No match found.')
+                            return $elementsWithSameName;
+                    }
+                    else
+                        return array('error' => 'There is already an element with this name.');
+
 
                     //File Server -- 13/06/2014
                     $refElementPdoManager = new RefElementPdoManager();
@@ -1044,11 +1053,14 @@ function renameHandler($idElement, $idUser, $newName, $options = array())
                         return $refElement;
 
                     if(preg_match('/^4/', $refElement['code']) || preg_match('/^9/', $refElement['code'])) // dossier ou non reconnu, pas d'extension à rajouter
+                    {
                         $oldCompleteName = $element->getName();
+                        $newCompleteName = $newName;
+                    }
                     else
                     {
                         $oldCompleteName = $element->getName().$refElement['extension'];
-                        $newCompleteName = $element->getName().$refElement['extension'];
+                        $newCompleteName = $newName.$refElement['extension'];
                     }
 
                     $FSRenameResult = renameFSElement($idUser, $element->getServerPath(), $oldCompleteName, $newCompleteName);
