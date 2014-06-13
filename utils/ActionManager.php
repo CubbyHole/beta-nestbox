@@ -1451,6 +1451,13 @@ function createNewFolder($idUser, $path, $folderName, $inheritRightsFromParent)
             return array('error' => 'Folder name not available.');
     }
 
+    //File Server - 13/06/2014
+    $mkdirResult = createFSDirectory($idUser, $path, $folderName);
+
+    if(!(is_bool($mkdirResult)) || !($mkdirResult == TRUE))
+        return $mkdirResult;
+    //Fin File Server
+
     //Récupération de l'id de RefElement dossier vide
     $refElementPdoManager = new RefElementPdoManager();
     $emptyFolder = $refElementPdoManager->findOne(array('state' => 1, 'code' => '4002'), array('_id' => TRUE));
