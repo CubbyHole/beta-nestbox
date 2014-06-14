@@ -279,7 +279,9 @@ function moveToTrash($idUser, $sourcePath, $elementName)
 
         //le nom de l'élément de destination est-il disponible?
         if(file_exists($destinationCompletePath))
-            $destinationCompletePath .= time();
+            $destinationCompletePath = pathinfo($destinationCompletePath, PATHINFO_FILENAME)
+                                      .time()
+                                      .pathinfo($destinationCompletePath, PATHINFO_EXTENSION);
 
         //@link http://www.php.net/manual/fr/function.rename.php
         $renameSuccessful = rename($sourceCompletePath, $destinationCompletePath);
