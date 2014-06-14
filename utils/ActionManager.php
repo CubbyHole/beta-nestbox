@@ -1411,11 +1411,10 @@ function moveHandler($idElement, $idUser, $path, $options = array())
                          * on met à jour son refElement
                          */
                         updateFolderStatus($path, $idUser);
+                        updateFolderStatus($element->getServerPath(), $idUser);
 
                         if(array_key_exists('keepRights', $options) && $options['keepRights'] == FALSE)
                             disableRights($impactedElements);
-
-                        //@todo déplacement sur le serveur de fichier
 
                         $operationSuccess = TRUE;
 
