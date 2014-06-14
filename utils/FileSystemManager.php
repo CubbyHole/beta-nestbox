@@ -151,17 +151,19 @@ function copyFSElement($idUser, $sourcePath, $sourceName, $destinationPath, $des
  * @author Alban Truc
  * @param string|MongoId $idUser
  * @param string $sourcePath
- * @param string $elementName
+ * @param string $sourceName
  * @param string $destinationPath
+ * @param string $destinationName
  * @since 12/06/2014
  * @return array|bool
  */
 
-function moveFSElement($idUser, $sourcePath, $elementName, $destinationPath)
+function moveFSElement($idUser, $sourcePath, $sourceName, $destinationPath, $destinationName)
 {
     $sourcePath = utf8_decode($sourcePath);
-    $elementName = utf8_decode($elementName);
+    $elementSourceName = utf8_decode($sourceName);
     $destinationPath = utf8_decode($destinationPath);
+    $elementDestinationName = utf8_decode($destinationName);
 
     if(!(is_string($idUser)))
         $idUser = (string)$idUser;
@@ -169,8 +171,8 @@ function moveFSElement($idUser, $sourcePath, $elementName, $destinationPath)
     $sourceFSPath = PATH.$idUser.$sourcePath;
     $destinationFSPath = PATH.$idUser.$destinationPath;
 
-    $sourceCompletePath = $sourceFSPath.$elementName;
-    $destinationCompletePath = $destinationFSPath.$elementName;
+    $sourceCompletePath = $sourceFSPath.$elementSourceName;
+    $destinationCompletePath = $destinationFSPath.$elementDestinationName;
 
     //le dossier et élément source existent
     if(file_exists($sourceCompletePath))
