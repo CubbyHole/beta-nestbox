@@ -89,17 +89,19 @@ function renameFSElement($idUser, $elementPath, $oldName, $newName)
  * Copie un élément sur le serveur de fichier
  * @author Alban Truc
  * @param MongoId|string $idUser
- * @param string $elementName
  * @param string $sourcePath
+ * @param string $sourceName
  * @param string $destinationPath
+ * @param string $destinationName
  * @since 12/06/2014
  * @return array|bool
  */
 
-function copyFSElement($idUser, $elementName, $sourcePath, $destinationPath)
+function copyFSElement($idUser, $sourcePath, $sourceName, $destinationPath, $destinationName )
 {
-    $elementName = utf8_decode($elementName);
+    $elementSourceName = utf8_decode($sourceName);
     $sourcePath = utf8_decode($sourcePath);
+    $elementDestinationName = utf8_decode($destinationName);
     $destinationPath = utf8_decode($destinationPath);
 
     if(!(is_string($idUser)))
@@ -108,8 +110,8 @@ function copyFSElement($idUser, $elementName, $sourcePath, $destinationPath)
     $sourceFSPath = PATH.$idUser.$sourcePath;
     $destinationFSPath = PATH.$idUser.$destinationPath;
 
-    $sourceCompletePath = $sourceFSPath.$elementName;
-    $destinationCompletePath = $destinationFSPath.$elementName;
+    $sourceCompletePath = $sourceFSPath.$elementSourceName;
+    $destinationCompletePath = $destinationFSPath.$elementDestinationName;
 
     //le dossier et élément source existent
     if(file_exists($sourceCompletePath))
@@ -131,16 +133,15 @@ function copyFSElement($idUser, $elementName, $sourcePath, $destinationPath)
         {
             if(is_file($sourceCompletePath))
                 //@link http://www.php.net/manual/fr/function.copy.php
-                $copySuccessful = copy($sourceCompletePath, $destinationCompletePath);
+                copy($sourceCompletePath, $destinationCompletePath);
             elseif(is_dir($sourceCompletePath))
             {
-                shell_exec("cp -r -a $sourceCompletePath $destinationCompletePath 2>&1");
+                $sourceCompletePath = "\"".$sourceCompletePath."\"";
+                $destinationCompletePath = "\"".$destinationCompletePath."\"";;
+              shell_exec("cp -r -a $sourceCompletePath $destinationCompletePath 2>&1");
             }
         }
-
-        if($copySuccessful != TRUE)
-            return array('error' => 'Copy was not done successfully on file server.');
-        else return TRUE;
+        return TRUE;
     }
     else return array('error' => 'Source element not found');
 }

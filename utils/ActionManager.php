@@ -440,10 +440,13 @@ function prepareCopyReturn($options, $operationSuccess, $error, $elementsImpacte
 
     $return['operationSuccess'] = $operationSuccess;
 
-    if(is_array($error) && array_key_exists('error', $error))
-        $return['error'] = $error['error'];
-    else
-        $return['error'] = $error;
+    if(!(empty($error)))
+    {
+        if(is_array($error) && array_key_exists('error', $error))
+            $return['error'] = $error['error'];
+        else
+            $return['error'] = $error;
+    }
 
     if(is_array($options))
     {
@@ -779,12 +782,18 @@ function copyHandler($idElement, $idUser, $path, $options = array())
                             return $refElement;
 
                         //dossier ou non reconnu, pas d'extension à rajouter
-                        if(preg_match('/^4/', $refElement['code']) || preg_match('/^9', $refElement['code']))
-                            $completeName = $elementNameInDestination;
+                        if(preg_match('/^4/', $refElement['code']) || preg_match('/^9/', $refElement['code']))
+                        {
+                            $completeSourceName = $element->getName();
+                            $completeDestinationName = $elementNameInDestination;
+                        }
                         else
-                            $completeName = $elementNameInDestination.$refElement['extension'];
+                        {
+                            $completeSourceName = $element->getName().$refElement['extension'];
+                            $completeDestinationName = $elementNameInDestination.$refElement['extension'];
+                        }
 
-                        $FSCopyResult = copyFSElement($idUser, $completeName, $element->getServerPath(), $path);
+                        $FSCopyResult = copyFSElement($idUser, $element->getServerPath(), $completeSourceName, $path, $completeDestinationName );
 
                         if(!(is_bool($FSCopyResult)) || $FSCopyResult != TRUE)
                             return $FSCopyResult;
@@ -1165,10 +1174,13 @@ function prepareMoveReturn($options, $operationSuccess, $error, $elementsImpacte
 
     $return['operationSuccess'] = $operationSuccess;
 
-    if(is_array($error) && array_key_exists('error', $error))
-        $return['error'] = $error['error'];
-    else
-        $return['error'] = $error;
+    if(!(empty($error)))
+    {
+        if(is_array($error) && array_key_exists('error', $error))
+            $return['error'] = $error['error'];
+        else
+            $return['error'] = $error;
+    }
 
     if(is_array($options))
     {
