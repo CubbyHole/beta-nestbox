@@ -1,4 +1,7 @@
 <?php
+$projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Nestbox';
+require_once $projectRoot.'/required.php';
+
 /**
  * Created by PhpStorm.
  * User: Crocell
@@ -234,5 +237,71 @@ function shareWithAnonymous($idElement, $idOwner, $recipientEmail)
 
 /*
  * supprimer un lien de partage
- * paramètres: idElement
+ * paramètres: idElement, idUser
  */
+
+/** Permet de désactiver les droits d'un élément pour un user, gestion récursive pour les dossiers.
+ * @param $idElement | id de l'élément qu'on veut désactiver
+ * @param $idUser | id de l'utilisateur concerné
+ * @param $idOwner | id du propriétaire de l'élément
+ * @return bool | array contenant un message d'erreur
+ */
+function disableShareRights($idElement, $idUser, $idOwner)
+{
+    $elementManager = new ElementPdoManager();
+    $refElementManager = new RefElementPdoManager();
+    $rightPdoManager = new RightPdoManager();
+
+    $element = $elementManager->findById($idElement);
+    $refElement = $refElementManager->findById($element->getRefElement());
+    $idRefElement = $refElement->getId();
+
+    /** @var  $isFolder => bool, true si l'élément est bien un dossier, sinon false */
+    $isFolder = isFolder($idRefElement);
+
+    if(is_bool($isFolder) && $isFolder == TRUE)
+    {
+        $serverPath = $element->getServerPath().$element->getName().'/';
+
+        //récupération des éléments contenus dans le dossier
+        $seekElementsInFolder = array(
+            'state' => (int)1,
+            'serverPath' => new MongoRegex("/^$serverPath/i"),
+            'idOwner' => new MongoId($idOwner)
+        );
+
+        //liste des éléments contenus dans le dossier
+        $elementsInFolder = $elementManager->find($seekElementsInFolder);
+        foreach($elementsInFolder as $subElement)
+        {
+            $rightCriteria = array(
+                'state' => (int) 1,
+                'idElement' => new MongoId($subElement->getId()),
+                'idUser' => new MongoId($idUser)
+            );
+
+            $rightUpdate = array(
+                '$set' => array( 'state' => (int) 0)
+            );
+
+            //pour chaque élément on désactive le droit qui lui était affecté
+            $disableElementsInFolder = $rightPdoManager->update($rightCriteria, $rightUpdate);
+            if(is_bool($disableElementsInFolder) && $disableElementsInFolder != TRUE)
+                return array('error' => 'No match found.');
+        }
+    }
+
+    $rightCriteria = array(
+        'state' => (int) 1,
+        'idElement' => new MongoId($idElement),
+        'idUser' => new MongoId($idUser)
+    );
+    $rightUpdate = array(
+        '$set' => array( 'state' => (int) 0)
+    );
+    //désactivation de l'élément parent
+    $disableParent = $rightPdoManager->update($rightCriteria, $rightUpdate);
+    if(is_bool($disableParent) && $disableParent != TRUE)
+        return array('error' => 'No match found.');
+
+}
