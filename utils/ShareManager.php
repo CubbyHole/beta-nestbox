@@ -242,7 +242,7 @@ function disableShareRights($idElement, $idUser, $idOwner)
  * paramètres: idElement, email, sendMail
  * action: màj de l'element pour lui ajouter un lien de dl généré
  */
-function shareWithAnonymous($idElement, $idOwner, $recipientEmail)
+function shareWithAnonymous($idElement, $idOwner, $recipientEmail = '')
 {
     $idElement = new MongoId($idElement);
     $idOwner = new MongoId($idOwner);
