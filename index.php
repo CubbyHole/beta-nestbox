@@ -46,6 +46,8 @@ if(isset($_SESSION['user']))
         <script  src="content/js/fancybox/moveElement.js"></script>
         <script  src="content/js/fancybox/downloadElement.js"></script>
         <script  src="content/js/fancybox/uploadElement.js"></script>
+        <script src="content/js/fancybox/shareElement.js"></script>
+        <script src="content/js/fancybox/infoElement.js"></script>
 
 
         <script src="content/js/dropfile.js"></script>
@@ -55,8 +57,6 @@ if(isset($_SESSION['user']))
         <script type="text/javascript" src="content/js/jquery.fancybox-media.js?v=1.0.6"></script>
         <script type="text/javascript" src="content/js/jquery.fancybox-thumbs.js?v=1.0.7"></script>
         <script src="content/bootstrap/js/bootstrap.min.js"></script>
-
-
     </head>
 
     <?php
@@ -65,37 +65,57 @@ if(isset($_SESSION['user']))
 
     <div id="contenu">
     <div id="actions">
-        <?php
-
-        if(isset($_GET['dir']))
+    <?php
+        if(isset($_GET['dir']) && !isset($_GET['shared']))
         {
             $directoryCurrent = urlencode($_GET['dir']);
             echo '<span>
             <div id="addFolder" class="actionButton" data-toggle="tooltip" title data-original-title="Create new folder">
                 <a class="addFolder fancybox.ajax " href="controller/fancybox/createFolder.php?dir='.$directoryCurrent.'">
-                <img src="content/img/icon_add.png">
+                <img class="imgButton" src="content/img/icon_add.png">
                 </a>
             </div>
 
             <div id="uploadElement" class="actionButton" data-toggle="tooltip" title="Upload file">
                 <a class="uploadElement fancybox.ajax" href="controller/fancybox/uploadElement.php?dir='.$directoryCurrent.'">
-                <img src="content/img/icon_upload.png">
+                <img class="imgButton" src="content/img/icon_upload.png">
                 </a>
             </div>';
         }
-        else
+        elseif(!isset($_GET['dir']) && !isset($_GET['shared']))
         {
             echo '<span>
             <div id="addFolder" class="actionButton" data-toggle="tooltip" title data-original-title="Create new folder">
                 <a class="addFolder fancybox.ajax" href="controller/fancybox/createFolder.php?dir=/" >
-                <img  id="actionButton" src="content/img/icon_add.png">
+                <img class="imgButton" id="actionButton" src="content/img/icon_add.png">
                 </a>
             </div>
             <div id="uploadElement" class="actionButton" data-toggle="tooltip" title="Upload file">
                 <a class="uploadElement fancybox.ajax" href="controller/fancybox/uploadElement.php?dir=/">
-                <img src="content/img/icon_upload.png" title="Upload">
+                <img class="imgButton" src="content/img/icon_upload.png" title="Upload">
                 </a>
             </div>';
+        }
+        elseif(!isset($_GET['dir']) && isset($_GET['shared']))
+        {
+            $check = checkRightOnCurrentDirectory($_GET['shared'], $userId);
+            if($check == TRUE)
+            {
+                $directoryCurrent = urlencode($_GET['shared']);
+                echo '<span>
+                <div id="addFolder" class="actionButton" data-toggle="tooltip" title data-original-title="Create new folder">
+                    <a class="addFolder fancybox.ajax " href="controller/fancybox/createFolder.php?shared='.$directoryCurrent.'">
+                    <img class="imgButton" src="content/img/icon_add.png">
+                    </a>
+                </div>
+
+                <div id="uploadElement" class="actionButton" data-toggle="tooltip" title="Upload file">
+                    <a class="uploadElement fancybox.ajax" href="controller/fancybox/uploadElement.php?shared='.$directoryCurrent.'">
+                    <img class="imgButton" src="content/img/icon_upload.png">
+                    </a>
+                </div>';
+            }
+
         }
 
 
@@ -103,34 +123,32 @@ if(isset($_SESSION['user']))
           <div id="disableElement" class="actionButton" data-toggle="tooltip" title="Delete"></div>
           <div id="copyElement" class="actionButton" data-toggle="tooltip" title="Copy"></div>
           <div id="moveElement" class="actionButton" data-toggle="tooltip" title="Move"></div>
-          <div id="downloadElement" class="actionButton" data-toggle="tooltip" title="Download file"></div></span>';
+          <div id="downloadElement" class="actionButton" data-toggle="tooltip" title="Download file"></div>
+          <div id="shareElement" class="actionButton" data-toggle="tooltip" title="Share element"></div>
+          <div id="infoElement" class="actionButton" data-toggle="tooltip" title="Info element"></div></span>';
 
         ?>
     </div>
-    <div id="fil_ariane">
+    <div id="fil_ariane" style="margin-left: 50px">
+
+
         <?php
+
         if(isset($_GET['dir']))
         {
-            $explode = explode('/', $_GET['dir']);
-            $d = $explode[sizeof($explode)-2];
-            var_dump($d);
-            echo '<span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'">
-                    Root
-                  </span>';
-            echo '/';
-            echo '<span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$d.'/">
-                    '.$d.'
-                  </span>';
-            echo '/';
-            echo '<span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$d.'/">
-                    '.$d.'
-                  </span>';
+            echo breadcrumbs($_GET['dir'], "My Files");
         }
-        else
+        elseif(isset($_GET['shared']) && $_GET['shared'] != "/")
         {
-            echo '<span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'">
-                    Root
-                  </span>';
+            echo breadcrumbs($_GET['shared'], "Shared with me", true);
+        }
+        elseif(!isset($_GET['dir']) && !isset($_GET['shared']))
+        {
+            echo '<span onclick="clickable(this)" data-tree='.$_SERVER['PHP_SELF'].'>My Files</span>';
+        }
+        elseif(!isset($_GET['dir']) && isset($_GET['shared']) && $_GET['shared'] == "/")
+        {
+           echo '<span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?shared=/">Shared with me</span>';
         }
         ?>
     </div>
@@ -139,9 +157,15 @@ if(isset($_SESSION['user']))
     <!--        et des sous-répertoires -->
     <?php
     echo '<div class="content-arbo">';
+
     arborescence($userId,"1","/");    // owner, isOwner, dir (à voir pour le dir pour mettre la base ) + owner = idOwner en fonction de l'user qui se connecte
-    if(!isset($_GET['dir']) || $_GET['dir'] == "/")
+
+    if(!isset($_GET['dir']) && !isset($_GET['shared']))
         contenu($userId,"1","/");
+    elseif(!isset($_GET['dir']) && isset($_GET['shared']))
+    {
+        contenu($userId,"1",$_GET['shared'], true);
+    }
     else
     {
         contenu($userId,"1",$_GET['dir']);

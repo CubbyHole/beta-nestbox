@@ -18,6 +18,20 @@ require_once $projectRoot.'/required.php';
             data: data
         }).success(function(msg){
                 $("#results").html(msg);
+                var reg = /(successfully)/;
+                if(reg.test(msg) == true)
+                {console.log(msg);
+                    $("#disableElem").css({
+                        'display':'none'
+                    });
+                    $("#cancel").css({
+                        'display':'none'
+                    });
+
+                    $("#results").css({
+                        'color':'green'
+                    });
+                }
             });
     }
 </script>
@@ -26,42 +40,20 @@ require_once $projectRoot.'/required.php';
     <div id="imageClose">
         <img src="./content/img/icon_close_box.png" onclick="closeBoxAndReload();"/>
     </div>
-    <div id="infosElement">
-        <span class="glyphicon glyphicon-info-sign" onclick="elementInformation();"></span>
-    </div>
 </div>
 
 <?php
 if( isset($_POST['var']) && !empty($_POST['var']) )
 {
-    $elementManager = new ElementPdoManager();
-    $refElementManager = new RefElementPdoManager();
-    $userManager = new UserPdoManager();
-
-
-    $element = $elementManager->findById($_GET['id']);
-    $refElement = $refElementManager->findById($element->getRefElement());
-    $user = $userManager->findById($element->getOwner());
-
-
-    echo '<div id="elementInformations">
-            <p><label name="description">Element information:</label></p>
-            <ul>
-                <li>Element name : '.$element->getName().'</li>
-                <li>Current directory : '.$element->getServerPath().'</li>
-                <li>Type : '.$refElement->getDescription().'</li>
-                <li>Size : '.$element->getSize().' KB</li>
-                <li>Owner : '.$user->getFirstName().' '.$user->getLastName().'</li>
-            </ul>
-          </div>';
-
-
-    ?>
+?>
     <!-- formulaire pour renommer -->
     <form id="submitDisable" method="POST">
-        <?php echo '<input type="hidden" name="idElement" id="idElement" value="'.$_GET['id'].'" read-only>'; ?>
-        <p style="text-align: center;"><input type="button" onclick="disableElement();" class="btn-success btn" value="Disable" name="disableElem">
-        <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel"></p>
+        <?php
+              echo '<p><label name="chooseDestination">Are you sure you want to disable this element :</label></p>';
+              echo '<input type="hidden" name="idElement" id="idElement" value="'.$_GET['id'].'" read-only>';
+        ?>
+        <p style="text-align: center;"><input type="button" onclick="disableElement();" class="btn-danger btn" value="Disable" name="disableElem" id="disableElem">
+        <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel" id="cancel"></p>
     </form>
     <div id="results"></div>
 <?php

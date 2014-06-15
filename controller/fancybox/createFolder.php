@@ -19,13 +19,17 @@ require_once $projectRoot.'/required.php';
             data: data
         }).success(function(msg){
                 $("#results").html(msg);
-                if(msg != "Folder name not available.")
+                var reg = /(successfully)/;
+                if(reg.test(msg) == true)
                 {
                     $("#createNewFolder").css({
-                       'display':'none'
+                        'display':'none'
                     });
                     $("#cancel").css({
                         'display':'none'
+                    });
+                    $("#results").css({
+                        'color':'green'
                     });
                 }
             });
@@ -37,20 +41,12 @@ require_once $projectRoot.'/required.php';
     <div id="imageClose">
         <img src="./content/img/icon_close_box.png" onclick="closeBoxAndReload();"/>
     </div>
-    <div id="infosElement">
-        <span class="glyphicon glyphicon-info-sign" onclick="elementInformation();"></span>
-    </div>
 </div>
 <?php
 
 if( isset($_POST['var']) && !empty($_POST['var']) )
 {
-
-    echo '<div id="elementInformations">
-             <p><label name="directory">Current Directory : '.$_GET['dir'].'</label><p>
-         </div>';
-
-    ?>
+?>
     <!--  formulaire pour la création de dossier -->
     <form id="newFolder" method="POST">
         <?php echo '<input type="hidden" name="currentDirectory" id="currentDirectory" value="'.$_GET['dir'].'" readonly>'; ?>

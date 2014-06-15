@@ -15,11 +15,12 @@ if(isset($_POST['idElement']))
 {
     $idElement = new MongoId($_POST['idElement']);
     $disableResult = disableHandler($idElement, $userId);
+
     if(is_array($disableResult) && array_key_exists('error', $disableResult))
     {
         echo $disableResult['error'];
     }
     else
-        echo 'The element has been successfully disabled. Please refresh the page.';
+        echo 'The element has been successfully disabled.';
 
 }

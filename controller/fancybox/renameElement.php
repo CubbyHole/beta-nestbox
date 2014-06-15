@@ -11,14 +11,26 @@ require_once $projectRoot.'/required.php';
 ?>
 <script type="text/javascript">
     function renameElement() {
-        var data = 'idElement='+$("#idElement").select().val()+'&newName='+$("#newName").select().val();
+        var data = 'idElement='+$("#idElement").select().val()+'&newName='+$("#newName").select().val()+'&oldName='+$("#oldName").select().val();
         jQuery.ajax({
             type: 'POST',
             url: './controller/actions/renameElement.php',
             data: data
         }).success(function(msg){
                 $("#results").html(msg);
-//                parent.location.reload(true);//                alert(data); 
+                var reg = /(successfully)/;
+                if(reg.test(msg) == true)
+                {
+                    $("#renameElem").css({
+                        'display':'none'
+                    });
+                    $("#cancel").css({
+                        'display':'none'
+                    });
+                    $("#results").css({
+                        'color':'green'
+                    });
+                }
             });
     }
 
@@ -28,9 +40,6 @@ require_once $projectRoot.'/required.php';
 <div id="utils_fancybox">
     <div id="imageClose">
         <img src="./content/img/icon_close_box.png" onclick="closeBoxAndReload();"/>
-    </div>
-    <div id="infosElement">
-        <span class="glyphicon glyphicon-info-sign" onclick="elementInformation();"></span>
     </div>
 </div>
 
@@ -47,27 +56,18 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     $user = $userManager->findById($element->getOwner());
 
 
-    echo '<div id="elementInformations">
-            <p><label name="description">Element information:</label></p>
-                <ul>
-                    <li>Element name : '.$element->getName().'</li>
-                    <li>Current directory : '.$element->getServerPath().'</li>
-                    <li>Type : '.$refElement->getDescription().'</li>
-                    <li>Size : '.$element->getSize().' KB</li>
-                    <li>Owner : '.$user->getFirstName().' '.$user->getLastName().'</li>
-                </ul>
-          </div>';
     ?>
     <!-- formulaire pour renommer -->
     <form id="submitRename" method="POST">
         <?php
         echo '<p><label name="nameRename">Enter a new name:</label></p>';
         echo '<input type="hidden" name="idElement" id="idElement" value="'.$_GET['id'].'" read-only>
-              <input type="text" name="newName" id="newName" value="'.$element->getName().'">';
+              <input type="text" name="newName" id="newName" value="'.$element->getName().'">
+              <input type="hidden" name="oldName" id="oldName" value="'.$element->getName().'">';
         ?>
         <br /><br />
-        <p style="text-align: center;"><input type="button" onclick="renameElement();" class="btn-success btn" value="Rename" name="renameElem">
-        <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel"></p>
+        <p style="text-align: center;"><input type="button" onclick="renameElement();" class="btn-success btn" value="Rename" name="renameElem" id="renameElem">
+        <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel" id="cancel"></p>
     </form>
     <div id="results"></div>
 <?php

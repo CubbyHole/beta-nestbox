@@ -30,7 +30,7 @@ function afficher(data){
 
 function selectFile(file){
     var elementId = file.getAttribute("id");
-    var elementName = file.getAttribute("name");
+    var elementName = encodeURI(file.getAttribute("name"));
     var elementRight = file.getAttribute("class");
 
     $("div[data-element-type='file']").css({
@@ -48,21 +48,38 @@ function selectFile(file){
     var copyAction = "<div id='elementToCopy' name="+ elementName +" class="+ elementId +"><a class='copyElement fancybox.ajax' href='controller/fancybox/copyElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_copy.png' title='Copy'></a></div>";
     var moveAction = "<div id='elementToMove' name="+elementName+" class="+ elementId +"><a class='moveElement fancybox.ajax' href='controller/fancybox/moveElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_cut.png' title='Cut'></a></div>";
     var downloadAction = "<div id='elementToDownload' name="+elementName+" class="+elementId+"><a class='downloadElement fancybox.ajax' href='controller/fancybox/downloadElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_download.png' title='Download'></a></div>";
+    var shareAction = "<div id='elementToShare' name="+elementName+" class="+elementId+"><a class='shareElement fancybox.ajax' href='controller/fancybox/shareElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_share.png' title='Share'></a></div>";
+    var infoAction = "<div id='elementInfo' name="+elementName+" class="+elementId+"><a class='infoElement fancybox.ajax' href='controller/fancybox/informationElement.php?id="+elementId+"'><span class='glyphicon glyphicon-info-sign' title='Info'></span></div>";
 
     $("#renameElement").empty();
     $("#disableElement").empty();
     $("#copyElement").empty();
     $("#moveElement").empty();
     $("#downloadElement").empty();
-    $("#downloadElement").append(downloadAction);
+    $("#shareElement").empty();
+    $("#infoElement").empty();
 
-    if(elementRight == 11 || elementRight == null)
+    if(elementRight == 11)
     {
         $("#renameElement").append(renameAction);
         $("#disableElement").append(deleteAction);
         $("#copyElement").append(copyAction);
         $("#moveElement").append(moveAction);
     }
+    else if(elementRight == null)
+    {
+        $("#renameElement").append(renameAction);
+        $("#disableElement").append(deleteAction);
+        $("#copyElement").append(copyAction);
+        $("#moveElement").append(moveAction);
+        $("#downloadElement").append(downloadAction);
+        $("#shareElement").append(shareAction);
+    }
+    else if(elementRight == 01)
+    {
+        $("#downloadElement").append(downloadAction);
+    }
+    $("#infoElement").append(infoAction);
 
 }
 
@@ -85,6 +102,9 @@ function selectFolder(folder){
     var elementName = folder.getAttribute("name");
     var elementRight = folder.getAttribute("class");
 
+//    var elementName = elementName.replace(/ /g,"");
+//    console.log(elementName);
+
     $("div[data-element-type='file']").css({
         'backgroundColor':'transparent'
     });
@@ -100,20 +120,33 @@ function selectFolder(folder){
     var deleteAction = "<div id='elementToDisable' name="+ elementName +" class="+ elementId +"><a class='disableElement fancybox.ajax' href='controller/fancybox/disableElement.php?id="+ elementId +"'><img class='imgButton' src='content/img/icon_delete.png' title='Delete'></a></div>";
     var copyAction = "<div id='elementToCopy' name="+ elementName +" class="+ elementId +"><a class='copyElement fancybox.ajax' href='controller/fancybox/copyElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_copy.png' title='Copy'></a></div>";
     var moveAction = "<div id='elementToMove' name="+elementName+" class="+ elementId +"><a class='moveElement fancybox.ajax' href='controller/fancybox/moveElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_cut.png' title='Cut'></a></div>";
+    var shareAction = "<div id='elementToShare' name="+elementName+" class="+elementId+"><a class='shareElement fancybox.ajax' href='controller/fancybox/shareElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_share.png' title='Share'></a></div>";
+    var infoAction = "<div id='elementInfo' name="+elementName+" class="+elementId+"><a class='infoElement fancybox.ajax' href='controller/fancybox/informationElement.php?id="+elementId+"'><span class='glyphicon glyphicon-info-sign' title='Info'></span></div>";
 
     $("#renameElement").empty();
     $("#disableElement").empty();
     $("#copyElement").empty();
     $("#moveElement").empty();
-	$("#downloadElement").empty();
+    $("#downloadElement").empty();
+    $("#shareElement").empty();
+    $("#infoElement").empty();
 
-    if(elementRight == 11 || elementRight == null)
+    if(elementRight == 11)
     {
         $("#renameElement").append(renameAction);
         $("#disableElement").append(deleteAction);
         $("#copyElement").append(copyAction);
         $("#moveElement").append(moveAction);
     }
+    else if(elementRight == null)
+    {
+        $("#renameElement").append(renameAction);
+        $("#disableElement").append(deleteAction);
+        $("#copyElement").append(copyAction);
+        $("#moveElement").append(moveAction);
+        $("#shareElement").append(shareAction);
+    }
+    $("#infoElement").append(infoAction);
 }
 
 
@@ -134,3 +167,14 @@ function hoverFolder(folder)
 //    });
 }
 
+
+function elementInformation() {
+    $("#elementInformations").css({
+        'display':'inline'
+    });
+}
+
+function closeBoxAndReload()
+{
+    parent.location.reload(true);
+}

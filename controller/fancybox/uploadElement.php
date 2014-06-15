@@ -163,7 +163,19 @@ function uploadElement() {
         data: data
     }).success(function(msg){
             $("#results").html(msg);
-//                alert(data); 
+            var reg = /(successfully)/;
+            if(reg.test(msg) == true)
+            {
+                $("#uploadElem").css({
+                    'display':'none'
+                });
+                $("#cancel").css({
+                    'display':'none'
+                });
+                $("#results").css({
+                    'color':'green'
+                });
+            }
         });
 }
     </script>
@@ -171,9 +183,6 @@ function uploadElement() {
 <div id="utils_fancybox">
 <div id="imageClose">
     <img src="./content/img/icon_close_box.png" onclick="closeBoxAndReload();"/>
-</div>
-<div id="infosElement">
-    <span class="glyphicon glyphicon-info-sign" onclick="elementInformation();"></span>
 </div>
 </div>
 
@@ -200,9 +209,6 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     else
         return $refElementNotEmptyDirectory;
 
-     echo '<div id="elementInformations">
-            <p><label name="directory">Current Directory : '.$_GET['dir'].'</label><p>
-           </div>';
 
 function cmp($a,$b)
 {
@@ -261,8 +267,8 @@ function cmp($a,$b)
                 echo '</select>';
         ?>
         <br /><br />
-        <input type="button" class="btn-success btn" onclick="uploadElement();" value="Upload" name="uploadElem">
-        <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel"></div>
+        <input type="button" class="btn-success btn" onclick="uploadElement();" value="Upload" name="uploadElem" id="uploadElem">
+        <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel" id="cancel"></div>
         <div id="informationElementToUpload"></div>
     </form>
     <div id="results"></div>
