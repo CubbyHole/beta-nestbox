@@ -25,7 +25,20 @@ if(isset($_SESSION['userId']))
             data: data
         }).success(function(msg){
                 $("#results").html(msg);
-//                alert(data); 
+                var reg = /(successfully)/;
+                if(reg.test(msg) == true)
+                {
+                    $("#copyElem").css({
+                        'display':'none'
+                    });
+                    $("#cancel").css({
+                        'display':'none'
+                    });
+
+                    $("#results").css({
+                       'color':'green'
+                    });
+                }
             });
     }
 </script>
@@ -35,53 +48,38 @@ if(isset($_SESSION['userId']))
     <div id="imageClose">
         <img src="./content/img/icon_close_box.png" onclick="closeBoxAndReload();"/>
     </div>
-    <div id="infosElement">
-        <span class="glyphicon glyphicon-info-sign" onclick="elementInformation();"></span>
-    </div>
 </div>
 
 <?php
 
 if( isset($_POST['var']) && !empty($_POST['var']) )
 {
-$elementManager = new ElementPdoManager();
-$refElementManager = new RefElementPdoManager();
-$userManager = new UserPdoManager();
+    $elementManager = new ElementPdoManager();
+    $refElementManager = new RefElementPdoManager();
+    $userManager = new UserPdoManager();
 
-$refElementEmptyDirectory = $refElementManager->findOne(array(
-    'code' => '4002',
-    'state' => 1
-));
-if($refElementEmptyDirectory instanceof RefElement)
-    $idRefElementEmptyDirectory = $refElementEmptyDirectory->getId();
-else
-    return $refElementEmptyDirectory;
+    $refElementEmptyDirectory = $refElementManager->findOne(array(
+        'code' => '4002',
+        'state' => 1
+    ));
+    if($refElementEmptyDirectory instanceof RefElement)
+        $idRefElementEmptyDirectory = $refElementEmptyDirectory->getId();
+    else
+        return $refElementEmptyDirectory;
 
-$refElementNotEmptyDirectory = $refElementManager->findOne(array(
-    'code' => '4003',
-    'state' => 1
-));
-if($refElementNotEmptyDirectory instanceof RefElement)
-    $idRefElementNotEmptyDirectory = $refElementNotEmptyDirectory->getId();
-else
-    return $refElementNotEmptyDirectory;
-
-
-$element = $elementManager->findById($_GET['id']);
-$refElement = $refElementManager->findById($element->getRefElement());
-$user = $userManager->findById($element->getOwner());
+    $refElementNotEmptyDirectory = $refElementManager->findOne(array(
+        'code' => '4003',
+        'state' => 1
+    ));
+    if($refElementNotEmptyDirectory instanceof RefElement)
+        $idRefElementNotEmptyDirectory = $refElementNotEmptyDirectory->getId();
+    else
+        return $refElementNotEmptyDirectory;
 
 
-echo '<div id="elementInformations">
-    <p><label name="description">Element information:</label></p>
-    <ul>
-        <li>Element name : '.$element->getName().'</li>
-        <li>Current directory : '.$element->getServerPath().'</li>
-        <li>Type : '.$refElement->getDescription().'</li>
-        <li>Size : '.$element->getSize().' KB</li>
-        <li>Owner : '.$user->getFirstName().' '.$user->getLastName().'</li>
-    </ul>
-</div>';
+    $element = $elementManager->findById($_GET['id']);
+    $refElement = $refElementManager->findById($element->getRefElement());
+    $user = $userManager->findById($element->getOwner());
 
 function cmp($a,$b)
 {
@@ -100,6 +98,7 @@ function cmp($a,$b)
                 $elementList = $elementManager->find(array(
                     'serverPath'=> new MongoRegex("/^/"),
                     'state' => 1,
+                    'idOwner' => $userId,
                     '$or' => array(
                         array('idRefElement' => $idRefElementEmptyDirectory),
                         array('idRefElement' => $idRefElementNotEmptyDirectory)
@@ -125,9 +124,9 @@ function cmp($a,$b)
 
     ?>
     <br /><br />
-    <p><input type="checkbox" name="keepRights" value="keepRights" id="keepRights"><label>Check this box if you want to keep the rights applied on its sub-elements ?</label></p>
-    <p style="text-align: center;"><input type="button" onclick="copyElement();" class="btn-success btn" value="Copy" name="copyElem">
-    <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel"></p>
+    <p><input type="checkbox" name="keepRights" value="keepRights" id="keepRights" checked><label> Check this box if you want to keep the rights applied on its sub-elements ?</label></p>
+    <p style="text-align: center;"><input type="button" onclick="copyElement();" class="btn-success btn" value="Copy" name="copyElem" id="copyElem">
+    <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel" id="cancel"></p>
 </form>
 <div id="results"></div>
 <?php

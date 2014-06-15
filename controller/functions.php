@@ -632,4 +632,61 @@ function getGravatar($email, $size = 60, $default = 'mm', $rating = 'g', $img = 
 
     return $url;
 }
+
+
+
+/**
+ * fil d'ariane
+ * @author Harry Bellod
+ * @param string $separator | permet de choisir un délimiteur entre les noms
+ * @param string $home | nom du dossier racine dans le fil d'ariance
+ * @param string $directory | shared ou dir
+ * @param bool $share
+ * @return string
+ * http://stackoverflow.com/questions/2594211/php-simple-dynamic-breadcrumb
+ * //@todo commenter et variables propres
+ */
+function breadcrumbs($directory, $home = 'My Files', $share = false, $separator = ' &raquo; ') {
+    // This gets the REQUEST_URI (/path/to/file.php), splits the string (using '/') into an array, and then filters out any empty values
+    $path = array_filter(explode('/', parse_url($directory, PHP_URL_PATH)));
+
+
+    // This will build our "base URL"
+    $base = $_SERVER['PHP_SELF'];
+
+    // Initialize a temporary array with our breadcrumbs. (starting with our home page, which I'm assuming will be the base URL)
+    if($share == false)
+        $breadcrumbs = Array("<span class='nameElement' onclick='clickable(this)' data-tree=\"$base\">$home</span>");
+    else
+        $breadcrumbs = Array("<span class='nameElement' onclick='clickable(this)' data-tree=\"$base?shared=/\">$home</span>");
+
+    // Find out the index for the last value in our path array
+    $keys = array_keys($path);
+    $last = end($keys);
+
+    $fullPath = '';
+    // Build the rest of the breadcrumbs
+    foreach ($path AS $x => $crumb)
+    {
+        $fullPath .= '/'.$crumb;
+        // Our "title" is the text that will be displayed (strip out .php and turn '_' into a space)
+        $title = ucwords(str_replace(Array('.php', '_'), Array('', ' '), $crumb));
+
+        // If we are not on the last index, then display an <a> tag
+        if ($x != $last)
+        {
+            if($share == false)
+                $breadcrumbs[] = "<span class='nameElement' onclick='clickable(this)' data-tree='$base?dir=$fullPath/'>$title</span>";
+            else
+                $breadcrumbs[] = "<span class='nameElement' onclick='clickable(this)' data-tree='$base?shared=$fullPath/'>$title</span>";
+            // Otherwise, just display the title (minus)
+        }
+        else
+            $breadcrumbs[] = $title;
+    }
+
+    // Build our temporary array (pieces of bread) into one big string :)
+//            var_dump(implode($separator, $breadcrumbs));
+    return implode($separator, $breadcrumbs);
+}
 ?>

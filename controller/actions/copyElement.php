@@ -19,7 +19,10 @@ if(isset($_POST['destination']))
 
 
     $options = array('returnImpactedElements' => true, 'returnMovedElements' => true, 'keepRights' => $keepRights);
-    copyHandler($_POST['idElement'], $userId, $_POST['destination'], $options);
+    $copyReturn = copyHandler($_POST['idElement'], $userId, $_POST['destination'], $options);
 
-    echo 'The element has been successfully copied to '.$_POST['destination'].'. Please refresh the page';
+    if(is_array($copyReturn) && array_key_exists('error', $copyReturn))
+        echo $copyReturn['error'];
+    else
+        echo 'The element has been successfully copied to '.$_POST['destination'];
 }

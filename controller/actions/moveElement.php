@@ -26,5 +26,8 @@ if(isset($_POST['destination']))
     $options = array('returnImpactedElements' => true, 'returnMovedElements' => true, 'keepRights' => $keepRights, 'keepDownloadLinks' => $keepDownloadLink);
     $moveResult = moveHandler($_POST['idElement'], $userId, $_POST['destination'], $options);
 
-    echo 'The element has been successfully moved to '.$_POST['destination'].'. Please refresh the page';
+    if(is_array($moveResult) && array_key_exists('error', $moveResult))
+        echo $moveResult['error'];
+    else
+        echo 'The element has been successfully moved to '.$_POST['destination'];
 }

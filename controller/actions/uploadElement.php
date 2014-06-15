@@ -13,5 +13,6 @@ require_once $projectRoot.'/required.php';
 if(isset($_POST['destination']))
 {
     var_dump($_POST['destination']);
+    echo "Your element has been successfully uploaded";
 //    $elementManager->uploadElement($_POST['elementName'], $userId, $_POST['elementType'], $_POST['elementSize'], $_POST['destination']);
 }

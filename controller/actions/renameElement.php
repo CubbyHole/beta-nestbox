@@ -11,7 +11,11 @@ require_once $projectRoot.'/required.php';
 
 if(!empty($_POST['newName']) && isset($_POST['idElement']))
 {
+
     $renameResult = renameHandler($_POST['idElement'], $userId, $_POST['newName']);
 
-    echo 'The element has been successfully renamed to '.$_POST['newName'].'.Please refresh the page';
+    if(is_array($renameResult) && array_key_exists('error', $renameResult))
+        echo $renameResult['error'];
+    else
+        echo 'The element has been successfully renamed to '.$_POST['newName'];
 }
