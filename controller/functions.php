@@ -54,6 +54,19 @@ if(isset($_SESSION['user']))
     $userId = $user->getId();
 }
 
+//soumission du formulaire de download
+if(isset($_POST['downloadElem']) && isset($_POST['idElement']))
+{
+    userDownload($userId, $_POST['idElement']);
+}
+
+
+// soumission du formulaire de download anonyme
+if(isset($_POST['downloadAnonymousElem']) && isset($_POST['idElement']))
+{
+    userDownload($userId, $_POST['idElement']);
+}
+
 /**
  * @param $owner
  * @param $isOwner
@@ -277,6 +290,13 @@ function contenu($owner,$isOwner,$dir, $sharedElements = false)
     echo "<!-- Contenu -->";
     echo '<div class="col-md-3 contenu">';
 
+
+    echo ' <div class="row">
+                  <span class="cell" style="width: 200px;">tasoeur</span>
+                  <span class="cell" style="width: 200px;">tasoeur KB</span>
+                  <span class="cell" style="width: 200px;">tasoeur</span>
+          </div>';
+
     $elementManager = new ElementPdoManager();
 
     if($sharedElements == true)
@@ -353,6 +373,7 @@ function contenu($owner,$isOwner,$dir, $sharedElements = false)
     {
         $refElementManager = new RefElementPdoManager();
 
+
         $elementList = $elementManager->returnElementsDetails($owner, $isOwner, $dir);
 
         if(is_array($elementList) && array_key_exists('error', $elementList))
@@ -363,7 +384,7 @@ function contenu($owner,$isOwner,$dir, $sharedElements = false)
         {
             foreach($elementList as $element)
             {
-    //        $element->setRefElement($refElementManager->findById($element->getRefElement()));
+                $extensionElement = str_replace('.','',$element->getRefElement()->getExtension());
                 $codeElement = $element->getRefElement()->getCode();
 
                 switch($codeElement)
@@ -425,17 +446,16 @@ function contenu($owner,$isOwner,$dir, $sharedElements = false)
                                   </div>';
                         break;
                     default:
-                        echo '<div  onclick="selectFile(this)" id="'.$element->getId().'" data-element-type="file" name="'.$element->getName().'">
+                        echo '<div onclick="selectFile(this)" id="'.$element->getId().'" data-element-type="file" name="'.$element->getName().'">
                                 <div class="row">
                                     <div id="arbo">
-                                        <span class="cell">
-                                            <img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />
-                                            '.$element->getName().'
-                                        </span>
-                                    </div>
+                                        <span class="cell"><img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" /></span>
+                                        <span class="cell" style="width:400px;">'.$element->getName().'</span>
+                                        <span class="cell" style="width:400px;">'.$element->getSize().' KB</span>
+                                        <span class="cell" style="width:400px;">'.$extensionElement.'</span>
                                 </div>
-                              </div>';
-
+                                </div>
+                               </div>';
                 }
             };
         }
