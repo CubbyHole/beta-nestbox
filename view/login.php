@@ -5,9 +5,19 @@ $projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Nestbox';
 //include '../header/header.php';
 ?>
 
-
+    <link rel="stylesheet" href="../content/bootstrap/css/bootstrap.min.css" />
     <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700,900,300italic,400italic,700italic,900italic' rel='stylesheet' type='text/css' />
+<!-- Styles -->
+<link rel="stylesheet" href="../content/css/bootstrap-overrides.css" type="text/css" />
+<link rel="stylesheet" href="../content/css/theme.css" type="text/css" />
 
+<link rel="stylesheet" href="../content/css/sign-in.css" type="text/css" media="screen" />
+
+<link rel="stylesheet" href="../content/css/style.css" type="text/css" media="screen" />
+
+<!--[if lt IE 9]>
+<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
 
 
     <!--[if lt IE 9]>

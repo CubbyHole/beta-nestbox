@@ -19,7 +19,7 @@ $myUserInfo = unserialize($_SESSION['user']);
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/Nestbox"><img id="nestboxLogo" src="content/img/logo/logoNestbox.png"><strong>NESTBOX</strong></a>
+            <a style="height: 70px" class="navbar-brand" href="/Nestbox"><img id="nestboxLogo" src="content/img/logo/logoNestbox.png"><strong>NESTBOX</strong></a>
         </div>
 
 
@@ -41,7 +41,7 @@ $myUserInfo = unserialize($_SESSION['user']);
 
                     </li>
                     <li>
-<!--                        <a id="cross" title="Logout" href="/Cubbyhole/view/logout.php"><span style="color:red;" class="glyphicon glyphicon-remove"></span></a></span>-->
+                        <a id="cross" title="Logout" href="/Nestbox/view/logout.php"><span style="color:red;" class="glyphicon glyphicon-remove"></span></a></span>
                     </li>
                     <li>
                         <a id="menuTwo-Name">
