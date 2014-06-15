@@ -3,12 +3,12 @@
  */
 
 $(document).ready(function(){
-    $(".disableElement").fancybox({
+    $(".shareElement").fancybox({
         maxWidth	: 800,
         maxHeight	: 600,
         fitToView	: false,
-        width		: '14%',
-        height		: '18%',
+        width		: '80%',
+        height		: '45%',
         autoSize	: false,
         closeClick	: false,
         openEffect	: 'none',
@@ -16,7 +16,7 @@ $(document).ready(function(){
         ajax: {
             type     : "POST",
             cache    : false,
-            data	 : "var=disableElement",
+            data	 : "var=shareElement",
             success	 : function(data){ $.fancybox(data); }
         }
     });

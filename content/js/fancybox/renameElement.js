@@ -8,11 +8,12 @@ $(document).ready(function(){
         maxHeight	: 600,
         fitToView	: false,
         width		: '12%',
-        height		: '34%',
+        height		: '20%',
         autoSize	: false,
         closeClick	: false,
         openEffect	: 'none',
         closeEffect	: 'none',
+        showCloseButton : true,
         ajax: {
             type     : "POST",
             cache    : false,
