@@ -1611,6 +1611,55 @@ function createNewFolder($idUser, $path, $folderName, $inheritRightsFromParent)
 }
 
 /**
+ * Détermine à partir d'une extension le content-type pour un téléchargement
+ * @author Alban Truc
+ * @param string $extension
+ * @since 15/06/2014
+ * @return string
+ */
+
+function getContentType($extension)
+{
+    switch (strtolower($extension))
+    {
+        case 'pdf':
+            $contentType = 'application/pdf';
+            break;
+        case 'exe':
+            $contentType = 'application/octet-stream';
+            break;
+        case 'zip':
+            $contentType = 'application/zip';
+            break;
+        case 'doc':
+            $contentType = 'application/msword';
+            break;
+        case 'xls':
+            $contentType = 'application/vnd.ms-excel';
+            break;
+        case 'ppt':
+            $contentType = 'application/vnd.ms-powerpoint';
+            break;
+        case 'gif':
+            $contentType = 'image/gif';
+            break;
+        case 'png':
+            $contentType = 'image/png';
+            break;
+        case 'jpeg':
+        case 'jpg':
+        $contentType = 'image/jpg';
+            break;
+        case 'mkv':
+            $contentType = 'video/x-matroska';
+            break;
+        default: $contentType = 'application/force-download';
+    }
+
+    return $contentType;
+}
+
+/**
  * @todo vérification du ratio (suffisant ou non pour autoriser le téléchargement)
  * @todo support de lourds fichiers
  * @author Alban Truc
@@ -1697,41 +1746,7 @@ function userDownload($idUser, $idElement)
         $fileExtension = pathinfo($fullFilePath, PATHINFO_EXTENSION);
 
         //déterminer le Content-Type
-        switch (strtolower($fileExtension))
-        {
-            case 'pdf':
-                $ctype = 'application/pdf';
-                break;
-            case 'exe':
-                $ctype = 'application/octet-stream';
-                break;
-            case 'zip':
-                $ctype = 'application/zip';
-                break;
-            case 'doc':
-                $ctype = 'application/msword';
-                break;
-            case 'xls':
-                $ctype = 'application/vnd.ms-excel';
-                break;
-            case 'ppt':
-                $ctype = 'application/vnd.ms-powerpoint';
-                break;
-            case 'gif':
-                $ctype = 'image/gif';
-                break;
-            case 'png':
-                $ctype = 'image/png';
-                break;
-            case 'jpeg':
-            case 'jpg':
-                $ctype = 'image/jpg';
-                break;
-            case 'mkv':
-                $ctype = 'video/x-matroska';
-                break;
-            default: $ctype = 'application/force-download';
-        }
+        $ctype = getContentType($fileExtension);
 
     //nécessite http://pecl.php.net/package/pecl_http
     /*
@@ -1740,6 +1755,88 @@ function userDownload($idUser, $idElement)
     http_throttle(0.1, $downloadSpeed * 1024);
     http_send_file($fullFilePath);
     */
+        header("Content-Type: $ctype");
+
+        $file = @fopen($fullFilePath, 'rb');
+        if($file)
+        {
+            while(!(feof($file)))
+            {
+                print(fread($file, 1024 * $downloadSpeed));
+                flush();
+                usleep(500);
+                if(connection_status() != 0)
+                {
+                    @fclose($file);
+                    die();
+                }
+            }
+            @fclose($file);
+        }
+    }
+}
+
+/**
+ * @todo vérification du ratio du propriétaire (suffisant ou non pour autoriser le téléchargement)
+ * @todo support de lourds fichiers
+ * @author Alban Truc
+ * @param $token
+ * @param int $downloadSpeed par défaut 100 KB/s
+ * @since 15/06/2014
+ * @return array
+ */
+
+function anonymousDownload($token, $downloadSpeed = 102400)
+{
+    if($token == '')
+        return array('error' => 'Invalid link.');
+
+    $elementPdoManager = new ElementPdoManager();
+
+    $elementCriteria = array(
+        'state' => (int)1,
+        'downloadLink' => $token
+    );
+
+    $element = $elementPdoManager->findOne($elementCriteria);
+
+    if(!($element instanceof Element))
+        return $element;
+
+    //récupère le code et l'extension de notre élément
+    $refElementPdoManager = new RefElementPdoManager();
+
+    $fieldsToReturn = array('code' => TRUE, 'extension' => TRUE);
+    $refElement = $refElementPdoManager->findById($element->getRefElement(), $fieldsToReturn);
+
+    if(!(array_key_exists('error', $refElement)))
+    {
+        if(preg_match('/^4/', $refElement['code']) || preg_match('/^9/', $refElement['code'])) // dossier ou non reconnu, pas d'extension à rajouter
+            return array('error' => 'Donwload not available on folder or unrecognized element');
+    }
+    else return $refElement;
+
+    $filePath = PATH.$element->getOwner().$element->getServerPath();
+    $fileName = $element->getName().$refElement['extension'];
+    $fullFilePath = $filePath.$fileName;
+
+    $fileSize = round($element->getSize() * 1024);
+
+    set_time_limit(0);
+
+    if($fd = fopen($fullFilePath, 'r'))
+    {
+        header("Cache-Control: public");
+        header("Content-Description: File Transfer");
+        header("Content-Disposition: attachment; filename=\"$fileName\"");
+        header("Content-Transfer-Encoding: binary");
+        header("Content-length: $fileSize");
+
+        $fileExtension = pathinfo($fullFilePath, PATHINFO_EXTENSION);
+
+        //déterminer le Content-Type
+        $ctype = getContentType($fileExtension);
+
         header("Content-Type: $ctype");
 
         $file = @fopen($fullFilePath, 'rb');
