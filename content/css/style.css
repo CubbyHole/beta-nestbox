@@ -34,7 +34,7 @@ a:hover{
 
 .row
 {
-    cursor : pointer;
+
     padding-left: 50px;
     /*display: table-row;*/
 }
@@ -148,13 +148,13 @@ li
 }
 div[data-element-type='file']:hover{
     background: #EEE!important;
+    cursor : pointer;
 }
 div[data-element-type='folder']:hover{
     background: #EEE!important;
+    cursor : pointer;
 }
-div[data-element-type='folder']:hover{
-    background: #EEE!important;
-}
+
 .nameElement:hover{
     color: orangered;
 }
@@ -224,6 +224,32 @@ div[data-element-type='folder']:hover{
     /* box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.5); */
 }
 
+/*grouse*/
+.bodyGrouse{
+    background-color: #3C3535!important;
+}
+.grouse{
+    padding-top: 230px;
+}
+.wrapGrouse{
+    padding: 15px;
+    box-sizing: border-box;
+    background: #EBE9E9;
+    border-radius: 20px;
+}
+.elemInfo{
+    margin: 0!important;
+}
+.ulElem{
+    padding-left: 0;
+}
+.elemInfoDownload{
+
+}
+.createAccountElem{
+    color: red;
+    font-weight: bold;
+}
 /* Footer
 -------------------------------------------------- */
 #footer {

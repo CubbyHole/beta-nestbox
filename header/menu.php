@@ -19,7 +19,7 @@ $myUserInfo = unserialize($_SESSION['user']);
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a style="height: 70px" class="navbar-brand" href="/Nestbox"><img id="nestboxLogo" src="content/img/logo/logoNestbox.png"><strong>NESTBOX</strong></a>
+            <a style="height: 70px" class="navbar-brand" href="/Nestbox"><img id="nestboxLogo" src="/Nestbox/content/img/logo/logoNestbox.png"><strong>NESTBOX</strong></a>
         </div>
 
 
