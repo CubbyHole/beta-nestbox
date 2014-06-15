@@ -22,6 +22,10 @@ if(isset($_SESSION['user']))
         <link rel=stylesheet type="text/css" href="content/css/style.css">
         <link rel=stylesheet type="text/css" href="content/bootstrap/css/bootstrap.css">
         <link rel=stylesheet type="text/css" href="content/bootstrap/css/bootstrap-theme.css">
+        <link rel=stylesheet type="text/css" href="content/css/theme.css">
+
+        <link href='http://fonts.googleapis.com/css?family=Lato:300,400,700,900,300italic,400italic,700italic,900italic'
+              rel='stylesheet' type='text/css'/>
 
         <!-- Add fancyBox -->
         <link rel="stylesheet" href="content/css/jquery.fancybox.css?v=2.1.5" type="text/css" media="screen" />
