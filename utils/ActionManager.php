@@ -1609,3 +1609,154 @@ function createNewFolder($idUser, $path, $folderName, $inheritRightsFromParent)
     }
     else return $insertResult;
 }
+
+/**
+ * @todo vérification du ratio (suffisant ou non pour autoriser le téléchargement)
+ * @todo support de lourds fichiers
+ * @author Alban Truc
+ * @param string|MongoId $idUser
+ * @param string|MongoId $idElement
+ * @since 15/06/2014
+ * @return array
+ */
+
+function userDownload($idUser, $idElement)
+{
+    $idUser = new MongoId($idUser);
+    $idElement = new MongoId($idElement);
+
+    $elementPdoManager = new ElementPdoManager();
+
+    $elementCriteria = array(
+        'state' => (int)1,
+        '_id' => $idElement
+    );
+
+    $element = $elementPdoManager->findOne($elementCriteria);
+
+    if(!($element instanceof Element))
+        return $element;
+
+    //récupération de la vitesse de téléchargement de l'utilisateur
+    $accountPdoManager = new AccountPdoManager();
+    $accountCriteria = array(
+        'state' => 1,
+        'idUser' => $idUser
+    );
+
+    $account = $accountPdoManager->findOne($accountCriteria);
+
+    if(!($account instanceof Account))
+        return $account;
+
+    $refPlanPdoManager = new RefPlanPdoManager();
+    $refPlan = $refPlanPdoManager->findById($account->getRefPlan());
+
+    if(!($refPlan instanceof RefPlan))
+        return $refPlan;
+
+    $downloadSpeed = $refPlan->getDownloadSpeed();
+    //return $downloadSpeed;
+    //récupère le code et l'extension de notre élément
+    $refElementPdoManager = new RefElementPdoManager();
+
+    $fieldsToReturn = array('code' => TRUE, 'extension' => TRUE);
+    $refElement = $refElementPdoManager->findById($element->getRefElement(), $fieldsToReturn);
+
+    if(!(array_key_exists('error', $refElement)))
+    {
+        if(preg_match('/^4/', $refElement['code']) || preg_match('/^9/', $refElement['code'])) // dossier ou non reconnu, pas d'extension à rajouter
+            return array('error' => 'Donwload not available on folder or unrecognized element');
+    }
+    else return $refElement;
+
+    // 01 correspond au droit de lecture.
+    $hasRight = actionAllowed($idElement, $idUser, array('01'));
+
+    if(is_bool($hasRight) && $hasRight == FALSE)
+        return array('error' => 'You are not allowed to download this file.');
+    elseif(is_array($hasRight))
+        return $hasRight;
+
+    $filePath = PATH.$idUser.$element->getServerPath();
+    $fileName = $element->getName().$refElement['extension'];
+    $fullFilePath = $filePath.$fileName;
+
+    $fileSize = round($element->getSize() * 1024);
+
+    set_time_limit(0);
+
+    if($fd = fopen($fullFilePath, 'r'))
+    {
+        header("Cache-Control: public");
+        header("Content-Description: File Transfer");
+        header("Content-Disposition: attachment; filename=\"$fileName\"");
+        header("Content-Transfer-Encoding: binary");
+        header("Content-length: $fileSize");
+
+        $fileExtension = pathinfo($fullFilePath, PATHINFO_EXTENSION);
+
+        //déterminer le Content-Type
+        switch (strtolower($fileExtension))
+        {
+            case 'pdf':
+                $ctype = 'application/pdf';
+                break;
+            case 'exe':
+                $ctype = 'application/octet-stream';
+                break;
+            case 'zip':
+                $ctype = 'application/zip';
+                break;
+            case 'doc':
+                $ctype = 'application/msword';
+                break;
+            case 'xls':
+                $ctype = 'application/vnd.ms-excel';
+                break;
+            case 'ppt':
+                $ctype = 'application/vnd.ms-powerpoint';
+                break;
+            case 'gif':
+                $ctype = 'image/gif';
+                break;
+            case 'png':
+                $ctype = 'image/png';
+                break;
+            case 'jpeg':
+            case 'jpg':
+                $ctype = 'image/jpg';
+                break;
+            case 'mkv':
+                $ctype = 'video/x-matroska';
+                break;
+            default: $ctype = 'application/force-download';
+        }
+
+    //nécessite http://pecl.php.net/package/pecl_http
+    /*
+    http_send_content_disposition($fileName);
+    http_send_content_type($ctype);
+    http_throttle(0.1, $downloadSpeed * 1024);
+    http_send_file($fullFilePath);
+    */
+        header("Content-Type: $ctype");
+
+        $file = @fopen($fullFilePath, 'rb');
+        if($file)
+        {
+            while(!(feof($file)))
+            {
+                print(fread($file, 1024 * $downloadSpeed));
+                flush();
+                usleep(500);
+                if(connection_status() != 0)
+                {
+                    @fclose($file);
+                    die();
+                }
+            }
+            @fclose($file);
+        }
+    }
+}
