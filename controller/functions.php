@@ -305,7 +305,7 @@ function contenu($owner,$isOwner,$dir, $sharedElements = false)
                 switch($codeElement)
                 {
                     case 4002:
-                        if(isset($_GET['shared']))
+
                             echo '<div  onclick="selectFolder(this)" id="'.$sharedElement['_id'].'" data-element-type="folder" name="'.$sharedElement['name'].'" class="'.$codeRightElement.'">
                                         <div class="row">
                                             <div id="arbo">
@@ -318,41 +318,15 @@ function contenu($owner,$isOwner,$dir, $sharedElements = false)
                                             </div>
                                         </div>
                                      </div>';
-                        else
-                            echo '<div  onclick="selectFolder(this)" id="'.$sharedElement['_id'].'" data-element-type="folder" name="'.$sharedElement['name'].'" class="'.$codeRightElement.'">
-                                        <div class="row">
-                                            <div id="arbo">
-                                                <span class="cell">
-                                                    <img src="'.$sharedElement['idRefElement']['imagePath'].'" width="18px" height="18px" />
-                                                    <span onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?shared=/'.$sharedElement['name'].'/">
-                                                    '.$sharedElement['name'].'
-                                                    </span>
-                                                </span>
-                                            </div>
-                                        </div>
-                                      </div>';
                         break;
                     case 4003:
-                        if(isset($_GET['dir']))
+
                             echo '<div  onclick="selectFolder(this)" id="'.$sharedElement['_id'].'" data-element-type="folder" name="'.$sharedElement['name'].'" class="'.$codeRightElement.'">
                                         <div class="row">
                                             <div id="arbo">
                                                 <span class="cell">
                                                     <img src="'.$sharedElement['idRefElement']['imagePath'].'" width="18px" height="18px" />
                                                     <span class="nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?shared='.$_GET['shared'].$sharedElement['name'].'/">
-                                                    '.$sharedElement['name'].'
-                                                    </span>
-                                                </span>
-                                            </div>
-                                        </div>
-                                      </div>';
-                        else
-                            echo '<div  onclick="selectFolder(this)" id="'.$sharedElement['_id'].'" data-element-type="folder" name="'.$sharedElement['name'].'" class="'.$codeRightElement.'">
-                                        <div class="row">
-                                            <div id="arbo">
-                                                <span class="cell">
-                                                    <img src="'.$sharedElement['idRefElement']['imagePath'].'" width="18px" height="18px" />
-                                                    <span class="nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?shared=/'.$sharedElement['name'].'/">
                                                     '.$sharedElement['name'].'
                                                     </span>
                                                 </span>
@@ -371,7 +345,6 @@ function contenu($owner,$isOwner,$dir, $sharedElements = false)
                                         </div>
                                     </div>
                                   </div>';
-
                 }
             };
         }
@@ -644,49 +617,88 @@ function getGravatar($email, $size = 60, $default = 'mm', $rating = 'g', $img = 
  * @param bool $share
  * @return string
  * http://stackoverflow.com/questions/2594211/php-simple-dynamic-breadcrumb
- * //@todo commenter et variables propres
  */
 function breadcrumbs($directory, $home = 'My Files', $share = false, $separator = ' &raquo; ') {
-    // This gets the REQUEST_URI (/path/to/file.php), splits the string (using '/') into an array, and then filters out any empty values
+
+    // on enlève les '/' de la chaine de caractère directory passée en paramètre avec l'explode, puis on supprime les index du tableau qui sont égaux à ''
     $path = array_filter(explode('/', parse_url($directory, PHP_URL_PATH)));
 
 
-    // This will build our "base URL"
+    // on définit la racine
     $base = $_SERVER['PHP_SELF'];
 
-    // Initialize a temporary array with our breadcrumbs. (starting with our home page, which I'm assuming will be the base URL)
+    // on vérifie la valeur du paramètre $share, il permet de distinguer la partie navigation standard de la partie navigation dans les dossiers partagés
     if($share == false)
         $breadcrumbs = Array("<span class='nameElement' onclick='clickable(this)' data-tree=\"$base\">$home</span>");
     else
         $breadcrumbs = Array("<span class='nameElement' onclick='clickable(this)' data-tree=\"$base?shared=/\">$home</span>");
 
-    // Find out the index for the last value in our path array
+    // on récupère l'index de la dernière valeur du tableau path
     $keys = array_keys($path);
-    $last = end($keys);
+    $lastIndex = end($keys);
 
     $fullPath = '';
-    // Build the rest of the breadcrumbs
+    // on parcours le tableau
     foreach ($path AS $x => $crumb)
     {
         $fullPath .= '/'.$crumb;
-        // Our "title" is the text that will be displayed (strip out .php and turn '_' into a space)
-        $title = ucwords(str_replace(Array('.php', '_'), Array('', ' '), $crumb));
 
-        // If we are not on the last index, then display an <a> tag
-        if ($x != $last)
+        // Lors de l'affichage du fil d'ariane, on utilise des liens sauf pour le dernier index pour pouvoir naviguer en arrière
+        if ($x != $lastIndex)
         {
-            if($share == false)
-                $breadcrumbs[] = "<span class='nameElement' onclick='clickable(this)' data-tree='$base?dir=$fullPath/'>$title</span>";
-            else
-                $breadcrumbs[] = "<span class='nameElement' onclick='clickable(this)' data-tree='$base?shared=$fullPath/'>$title</span>";
-            // Otherwise, just display the title (minus)
+            // encore une fois on distingue les deux navigations possibles
+            if($share == false) // navigation de base
+                $breadcrumbs[] = "<span class='nameElement' onclick='clickable(this)' data-tree='$base?dir=$fullPath/'>$crumb</span>";
+            else // navigation dans les dossiers partagés
+                $breadcrumbs[] = "<span class='nameElement' onclick='clickable(this)' data-tree='$base?shared=$fullPath/'>$crumb</span>";
+
         }
         else
-            $breadcrumbs[] = $title;
+            $breadcrumbs[] = $crumb;
     }
 
     // Build our temporary array (pieces of bread) into one big string :)
 //            var_dump(implode($separator, $breadcrumbs));
     return implode($separator, $breadcrumbs);
 }
+
+
+/** Permet de vérifier si l'utilisateur possède les droits maximums dans le dossier courant
+ * @author Harry Bellod
+ * @param $serverPath | path actuel
+ * @param $idUser | id de l'user connecté
+ * @return bool | true si l'user à les droits maximums (écriture/lecture)
+ */
+function checkRightOnCurrentDirectory($serverPath, $idUser)
+{
+    $elementManager = new ElementPdoManager();
+    $rightManager = new RightPdoManager();
+    $refRightManager = new RefRightPdoManager();
+
+    if($serverPath != "/")
+    {
+        // on récupère le nom du dossier ou l'on se trouve
+        $explode = explode("/", $serverPath);
+        $currentDirectory = $explode[sizeof($explode)-2];
+
+        // on récupère son serverPath
+        $pattern = "#".$currentDirectory."/#";
+        $path = preg_replace($pattern, "", $serverPath, 1);
+
+        $criteria = array('name' => $currentDirectory, 'serverPath' => $path, 'state' => 1);
+        $element = $elementManager->findOne($criteria);
+
+
+        $rightCriteria = array('idElement' => $element->getId(), 'idUser' => $idUser);
+        $right = $rightManager->findOne($rightCriteria);
+
+        $refRight = $refRightManager->findById($right->getRefRight());
+
+        //si l'utilisateur n'a que les droits de lecture alors return false, sinon true
+        if($refRight->getCode() == '01')
+            return false;
+        else
+            return true;
+    }
+ }
 ?>
