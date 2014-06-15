@@ -49,7 +49,9 @@ function selectFile(file){
     var moveAction = "<div id='elementToMove' name="+elementName+" class="+ elementId +"><a class='moveElement fancybox.ajax' href='controller/fancybox/moveElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_cut.png' title='Cut'></a></div>";
     var downloadAction = "<div id='elementToDownload' name="+elementName+" class="+elementId+"><a class='downloadElement fancybox.ajax' href='controller/fancybox/downloadElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_download.png' title='Download'></a></div>";
     var shareAction = "<div id='elementToShare' name="+elementName+" class="+elementId+"><a class='shareElement fancybox.ajax' href='controller/fancybox/shareElement.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_share.png' title='Share'></a></div>";
+    var shareAnonymousAction = "<div id='elementToShareAnonymous' name="+elementName+" class="+elementId+"><a class='shareElementAnonymous fancybox.ajax' href='controller/fancybox/shareElementAnonymous.php?id="+elementId+"'><img class='imgButton' src='content/img/icon_share_anonymous.png' title='Anonymous share'></a></div>";
     var infoAction = "<div id='elementInfo' name="+elementName+" class="+elementId+"><a class='infoElement fancybox.ajax' href='controller/fancybox/informationElement.php?id="+elementId+"'><span class='glyphicon glyphicon-info-sign' title='Info'></span></div>";
+
 
     $("#renameElement").empty();
     $("#disableElement").empty();
@@ -58,6 +60,7 @@ function selectFile(file){
     $("#downloadElement").empty();
     $("#shareElement").empty();
     $("#infoElement").empty();
+    $("#shareElementAnonymous").empty();
 
     if(elementRight == 11)
     {
@@ -74,6 +77,7 @@ function selectFile(file){
         $("#moveElement").append(moveAction);
         $("#downloadElement").append(downloadAction);
         $("#shareElement").append(shareAction);
+        $("#shareElementAnonymous").append(shareAnonymousAction);
     }
     else if(elementRight == 01)
     {
@@ -129,6 +133,7 @@ function selectFolder(folder){
     $("#moveElement").empty();
     $("#downloadElement").empty();
     $("#shareElement").empty();
+    $("#shareElementAnonymous").empty();
     $("#infoElement").empty();
 
     if(elementRight == 11)

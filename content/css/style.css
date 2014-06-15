@@ -30,12 +30,12 @@ a:hover{
 .cell
 {
     display: table-cell;
-    min-width: 150px;
 }
 
 .row
 {
     cursor : pointer;
+    padding-left: 50px;
     /*display: table-row;*/
 }
 
@@ -68,7 +68,7 @@ a:hover{
 
 #elementInformations
 {
-    margin-top: 50px;
+    margin-top: 30px;
     margin-left: 30px;
     margin-right: 30px;
 }
@@ -78,7 +78,7 @@ a:hover{
     background-color: #6495ED;
 }
 
-#disableElement,#renameElement,#copyElement,#moveElement,#addFolder,#downloadElement,#uploadElement,#shareElement,#infoElement
+#disableElement,#renameElement,#copyElement,#moveElement,#addFolder,#downloadElement,#uploadElement,#shareElement,#infoElement,#shareElementAnonymous
 {
     width:30px;
     float:left;
@@ -126,7 +126,7 @@ li
 
 
 /** Formulaires **/
-#submitCopy,#newFolder,#submitDisable,#submitDownload,#submitRename,#submitMove,#submitUpload,#submitShare,#modifyShare
+#submitCopy,#newFolder,#submitDisable,#submitDownload,#submitRename,#submitMove,#submitUpload,#submitShare,#submitShareAnonymous,#modifyShare,#downloadLink,#downloadLinkElement
 {
     text-align: center;
 }
@@ -139,6 +139,12 @@ li
     height: 686px;
     background: aliceblue;
     font-size: 20px;
+}
+.contenu div[data-element-type='file']{
+    width: 300%;
+}
+.contenu div[data-element-type='folder']{
+    width: 300%;
 }
 div[data-element-type='file']:hover{
     background: #EEE!important;
@@ -164,6 +170,7 @@ div[data-element-type='folder']:hover{
 /*Arborescence*/
 .arborescence{
     padding-left: 45px!important;
+    margin-right: 20px;
 }
 .title-content{
     margin-top: 0!important;
@@ -174,8 +181,10 @@ div[data-element-type='folder']:hover{
 
 /*contenu*/
 .contenu{
-
+    border-left: 1px solid;
 }
+
+
 #actions::after{
     content: '';
     background: url(../img/logo/logoNestBox.png) no-repeat;
