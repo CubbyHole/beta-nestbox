@@ -48,6 +48,7 @@ if(isset($_SESSION['user']))
         <script  src="content/js/fancybox/uploadElement.js"></script>
         <script src="content/js/fancybox/shareElement.js"></script>
         <script src="content/js/fancybox/infoElement.js"></script>
+        <script src="content/js/fancybox/shareElementAnonymous.js"></script>
 
 
         <script src="content/js/dropfile.js"></script>
@@ -125,6 +126,7 @@ if(isset($_SESSION['user']))
           <div id="moveElement" class="actionButton" data-toggle="tooltip" title="Move"></div>
           <div id="downloadElement" class="actionButton" data-toggle="tooltip" title="Download file"></div>
           <div id="shareElement" class="actionButton" data-toggle="tooltip" title="Share element"></div>
+          <div id="shareElementAnonymous" class="actionButton" data-toggle="tooltip" title="Anonymous share"></div>
           <div id="infoElement" class="actionButton" data-toggle="tooltip" title="Info element"></div></span>';
 
         ?>
