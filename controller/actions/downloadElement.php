@@ -16,5 +16,6 @@ if(isset($_POST['idElement']))
   /**
    *  appel de la fonction download
    */
+    userDownload($userId,$_POST['idElement']);
     echo "You have successfully download this element.";
 }

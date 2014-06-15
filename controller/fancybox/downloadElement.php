@@ -87,7 +87,7 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
             echo '<p><label name="chooseDestination">Are you sure you want to download this element :</label></p>';
             echo '<input type="hidden" name="idElement" id="idElement" value="'.$_GET['id'].'" read-only>';
         ?>
-        <p style="text-align: center;"><input type="button" onclick="downloadElement();" class="btn-success btn" value="Download" name="downloadElem" id="downloadElem">
+        <p style="text-align: center;"><input type="submit" class="btn-success btn" value="Download" name="downloadElem" id="downloadElem">
         <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel" id="cancel"></p>
     </form>
     <div id="results"></div>
