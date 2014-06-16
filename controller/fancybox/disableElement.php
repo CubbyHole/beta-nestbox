@@ -21,10 +21,8 @@ require_once $projectRoot.'/required.php';
                 var reg = /(successfully)/;
                 if(reg.test(msg) == true)
                 {console.log(msg);
-                    $("#disableElem").css({
-                        'display':'none'
-                    });
-                    $("#cancel").css({
+                    $("#submitDisable").css
+                    ({
                         'display':'none'
                     });
 

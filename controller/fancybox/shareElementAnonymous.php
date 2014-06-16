@@ -74,7 +74,7 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     else
     {
         echo '<div id="downloadLink"  style="margin-top: 50px;text-align: center;">';
-            echo 'This element already has a download link. Copy the following link to your friend to give them possibility to download this element';
+            echo 'This element already has a download link. Copy the following link to your friend to give them chance to download this element';
             echo '<br />';
             echo '<font color="green">http://localhost/Nestbox/view/grouse.php?token='.$element->getDownloadLink().'<font>';
         echo '</div>';
