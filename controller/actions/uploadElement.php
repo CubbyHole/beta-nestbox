@@ -43,7 +43,7 @@ if(isset($_POST['destination']))
         );
 
         $createElement = $elementManager->create($criteria);
-
+        updateFolderStatus($_POST['destination'], $userId);
         echo "Your element has been successfully uploaded.";
     }
 }
