@@ -4,11 +4,11 @@
 
 $(document).ready(function(){
     $(".uploadElement").fancybox({
-        maxWidth	: 800,
-        maxHeight	: 600,
+        maxWidth	: 1500,
+        maxHeight	: 1000,
         fitToView	: false,
-        width		: '80%',
-        height		: '45%',
+        width		: '35%',
+        height		: '85%',
         autoSize	: false,
         closeClick	: false,
         openEffect	: 'none',

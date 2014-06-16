@@ -13,182 +13,182 @@ $projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Nestbox';
 require_once $projectRoot.'/required.php';
 ?>
 
-<script type="text/javascript">
-(function () {
-    "use strict";
-
-    var file_id = 1, drop_zone;
-    document.getElementById('drop_zone').onclick = function () {
-    document.getElementById('files').click();
-
-    return false;
-    };
-
-    if ((typeof File !== 'undefined') && !File.prototype.slice) {
-    if(File.prototype.webkitSlice) {
-    File.prototype.slice = File.prototype.webkitSlice;
-    }
-
-    if(File.prototype.mozSlice) {
-    File.prototype.slice = File.prototype.mozSlice;
-    }
-    }
-
-    if (!window.File || !window.FileReader || !window.FileList || !window.Blob || !File.prototype.slice) {
-    alert('File APIs are not fully supported in this browser. Please use latest Mozilla Firefox or Google Chrome.');
-    }
-
-    function hash_file(file, workers){
-       console.log(file);
-    var i, buffer_size, block, threads, reader, blob, handle_hash_block, handle_load_block;
-
-    handle_load_block = function (event) {
-    for( i = 0; i < workers.length; i += 1) {
-    threads += 1;
-    workers[i].postMessage({
-    'message' : event.target.result,
-    'block' : block
-    });
-    }
-    };
-    handle_hash_block = function (event) {
-    threads -= 1;
-
-    if(threads === 0) {
-    if(block.end !== file.size) {
-    block.start += buffer_size;
-    block.end += buffer_size;
-
-    if(block.end > file.size) {
-    block.end = file.size;
-    }
-    reader = new FileReader();
-    reader.onload = handle_load_block;
-    blob = file.slice(block.start, block.end);
-
-    reader.readAsArrayBuffer(blob);
-    }
-    }
-    };
-    buffer_size = 64 * 16 * 1024;
-    block = {
-    'file_size' : file.size,
-    'start' : 0
-    };
-
-    block.end = buffer_size > file.size ? file.size : buffer_size;
-    threads = 0;
-
-    for (i = 0; i < workers.length; i += 1) {
-    workers[i].addEventListener('message', handle_hash_block);
-    }
-    reader = new FileReader();
-    reader.onload = handle_load_block;
-    blob = file.slice(block.start, block.end);
-
-    reader.readAsArrayBuffer(blob);
-    }
-
-    function handle_worker_event(id) {
-    return function (event) {
-    if (event.data.result) {
-    $("#" + id).parent().html(event.data.result);
-    } else {
-    $("#" + id + ' .bar').css('width', event.data.block.end * 100 / event.data.block.file_size + '%');
-    }
-    };
-    }
-
-    function handle_file_select(event) {
-    event.stopPropagation();
-    event.preventDefault();
-
-    var i, output, files, file, workers, worker;
-    files = event.dataTransfer ? event.dataTransfer.files : event.target.files;
-    output = [];
-
-    for (i = 0; i < files.length; i += 1) {
-    file = files[i];
-    workers = [];
-
-    output.push('<tr><td class="span12"><strong>', file.name, '</strong></td><td> (', file.type || 'n/a', ') - ', file.size, ' bytes</td></tr>');
-
-//    if (document.getElementById('hash_md5').checked) {
-//    output.push('<tr>', '<td>MD5</td><td> <div class="progress progress-striped active" style="margin-bottom: 0px" id="md5_file_hash_', file_id, '"><div class="bar" style="width: 0%;"></div></div></td></tr>');
-//    worker = new Worker('/js/calculator/calculator.worker.md5.js');
-//    worker.addEventListener('message', handle_worker_event('md5_file_hash_' + file_id));
-//    workers.push(worker);
-//    }
-
-
-    output.push('<tr>', '<td>SHA1</td><td> <div class="progress progress-striped active" style="margin-bottom: 0px" id="sha1_file_hash_', file_id, '"><div class="bar" style="width: 0%;"></div></div></td></tr>');
-    worker = new Worker('../Nestbox/content/js/calculatorSha1.js');
-    worker.addEventListener('message', handle_worker_event('sha1_file_hash_' + file_id));
-    workers.push(worker);
-
-
-//    if (document.getElementById('hash_sha256').checked) {
-//    output.push('<tr>', '<td>SHA256</td><td> <div class="progress progress-striped active" style="margin-bottom: 0px" id="sha256_file_hash_', file_id, '"><div class="bar" style="width: 0%;"></div></div></td></tr>');
-//    worker = new Worker('/ /js/calculator/calculator.worker.sha256.js');
-//    worker.addEventListener('message', handle_worker_event('sha256_file_hash_' + file_id));
-//    workers.push(worker);
-//    }
-
-    hash_file(file, workers);
-    file_id += 1;
-
-    }
-
-    document.getElementById('list').innerHTML = '<table class="table table-striped table-hover">' + output.join('') + '</table>' + document.getElementById('list').innerHTML;
-    }
-
-    function handle_drag_over(event) {
-    event.stopPropagation();
-    event.preventDefault();
-    }
-
-    drop_zone = document.getElementById('drop_zone');
-
-    drop_zone.addEventListener('dragover', handle_drag_over, false);
-    drop_zone.addEventListener('drop', handle_file_select, false);
-
-    document.getElementById('files').addEventListener('change', handle_file_select, false);
-}());
-
-function uploadElement() {
-    var data = 'destination='+$("#destination").select().val()+'&directory='+$("#directory").select().val(); // voir ce qu'on doit récupérer avec Alban
-    jQuery.ajax({
-        type: 'POST',
-        url: './controller/actions/uploadElement.php',
-        data: data
-    }).success(function(msg){
-            $("#results").html(msg);
-            var reg = /(successfully)/;
-            if(reg.test(msg) == true)
-            {
-                $("#uploadElem").css({
-                    'display':'none'
-                });
-                $("#cancel").css({
-                    'display':'none'
-                });
-                $("#results").css({
-                    'color':'green'
-                });
-            }
-        });
-}
-    </script>
-
 <div id="utils_fancybox">
-<div id="imageClose">
-    <img src="./content/img/icon_close_box.png" onclick="closeBoxAndReload();"/>
+    <div id="imageClose">
+        <img src="./content/img/icon_close_box.png" onclick="closeBoxAndReload();"/>
+    </div>
 </div>
-</div>
+    <div class="contain">
+        <div class="upload_form_cont">
+            <div id="dropArea">Drop area</div>
+            <div class="info">
+                <div><input type="hidden" id="url" value="http://localhost/Nestbox/controller/actions/uploadElement.php"/></div>
+                <h2>File :</h2>
+                <div id="result"></div>
+                <canvas width="500" height="20"></canvas>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
 
+        function uploadElement() {
+            var data = 'destination='+$("#destination").select().val()+'&file='+$("#fileExplorer").select().val();
+            jQuery.ajax({
+                type: 'POST',
+                url: './controller/actions/uploadElement.php',
+                data: data
+            }).success(function(msg){
+                    $("#results").html(msg);
+                    var reg = /(successfully)/;
+                    if(reg.test(msg) == true)
+                    {
+                        $("#submitUpload").css({
+                            'display':'none'
+                        });
+                        $("#results").css({
+                            'color':'green'
+                        });
+                    }
+                });
+        }
+
+        // variables
+        var dropArea = document.getElementById('dropArea');
+        var canvas = document.querySelector('canvas');
+        var context = canvas.getContext('2d');
+        var count = document.getElementById('count');
+        var destinationUrl = document.getElementById('url');
+        var result = document.getElementById('result');
+        var list = [];
+        var totalSize = 0;
+        var totalProgress = 0;
+
+        // main initialization
+        (function(){
+
+            // init handlers
+            function initHandlers() {
+                dropArea.addEventListener('drop', handleDrop, false);
+                dropArea.addEventListener('dragover', handleDragOver, false);
+            }
+
+            // draw progress
+            function drawProgress(progress) {
+                context.clearRect(0, 0, canvas.width, canvas.height); // clear context
+
+                context.beginPath();
+                context.strokeStyle = '#4B9500';
+                context.fillStyle = '#4B9500';
+                context.fillRect(0, 0, progress * 500, 20);
+                context.closePath();
+
+                // draw progress (as text)
+                context.font = '16px Verdana';
+                context.fillStyle = '#000';
+                context.fillText('Progress: ' + Math.floor(progress*100) + '%', 50, 15);
+            }
+
+            // drag over
+            function handleDragOver(event) {
+                event.stopPropagation();
+                event.preventDefault();
+
+                dropArea.className = 'hover';
+            }
+
+            // drag drop
+            function handleDrop(event) {
+                event.stopPropagation();
+                event.preventDefault();
+
+                processFiles(event.dataTransfer.files);
+            }
+
+            // process bunch of files
+            function processFiles(filelist) {
+                if (!filelist || !filelist.length || list.length) return;
+
+                totalSize = 0;
+                totalProgress = 0;
+                result.textContent = '';
+
+                for (var i = 0; i < filelist.length && i < 1; i++) {
+                    list.push(filelist[i]);
+                    totalSize += filelist[i].size;
+                }
+                uploadNext();
+            }
+
+            // upload file
+            function uploadFile(file, status) {
+
+                // prepare XMLHttpRequest
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', destinationUrl.value);
+                xhr.onload = function() {
+                    result.innerHTML += this.responseText;
+                    handleComplete(file.size);
+                };
+                xhr.onerror = function() {
+                    result.textContent = this.responseText;
+                    handleComplete(file.size);
+                };
+                xhr.upload.onprogress = function(event) {
+                    handleProgress(event);
+                }
+                xhr.upload.onloadstart = function(event) {
+                }
+
+                // prepare FormData
+                var formData = new FormData();
+                formData.append('file', file);
+                xhr.send(formData);
+                $("#uploadFile").empty();
+            }
+
+            // upload next file
+            function uploadNext() {
+                if (list.length) {
+                    dropArea.className = 'uploading';
+
+                    var nextFile = list.shift();
+                    if (nextFile.size >= 209715200) { // 200 Mo
+                        result.innerHTML += '<div class="f">Too big file (max filesize exceeded)</div>';
+                        handleComplete(nextFile.size);
+                    } else {
+                        uploadFile(nextFile, status);
+                    }
+                } else {
+                    dropArea.className = '';
+                }
+            }
+
+            initHandlers();
+        })();
+
+
+        $("#fileExplorer").change(function()
+        {
+            $(".contain").css
+            ({
+                'display':'none'
+            })
+            $("#formUpload").css
+            ({
+                'display':'none'
+            })
+            $("#formBasicUpload").css
+            ({
+                'display':'inline',
+                'text-align':'center'
+            })
+        });
+    </script>
 <?php
 if( isset($_POST['var']) && !empty($_POST['var']) )
 {
+
+
     $elementManager = new ElementPdoManager();
     $refElementManager = new RefElementPdoManager();
     $refElementEmptyDirectory = $refElementManager->findOne(array(
@@ -217,25 +217,49 @@ function cmp($a,$b)
 
 
 ?>
+    <!-- Formulaire pour l'upload basique -->
+    <form id="submitBasicUpload" method="POST" enctype="multipart/form-data">
+    <div id="uploadFile" style="margin: 50px 0 0 50px;text-align: center"><input style="margin-bottom: 80px;" type="file" name="fileExplorer" id="fileExplorer">
+    <?php
+        echo '<div id="formBasicUpload" style="display: none;"><label name="chooseDestination">Select a destination: &nbsp</label>';
+            echo '<select name="destination" id="destination">
+                <option>/</option>';
 
-    <!--  formulaire pour la création de dossier -->
+                $elementList = $elementManager->find(array(
+                'serverPath'=> new MongoRegex("/^/"),
+                'state' => 1,
+                'idOwner' => $userId,
+                '$or' => array(
+                array('idRefElement' => $idRefElementEmptyDirectory),
+                array('idRefElement' => $idRefElementNotEmptyDirectory)
+                )
+                ),
+                array(
+                'serverPath' => TRUE,
+                'name' => TRUE,
+                '_id' => FALSE
+                ));
+
+                $f = function($array){return $array['serverPath'].$array['name'];};
+
+                $elementList = array_map($f, $elementList);
+                $result = array_unique($elementList);
+
+                usort($result, "cmp");
+                foreach($result as $element)
+                {
+                echo '<option>'.$element.'/</option>';
+                }
+                echo '</select>';
+            ?>
+            <br /><br />
+            <input type="submit" class="btn-success btn" value="Upload" name="uploadBasicElem" id="uploadBasicElem">
+            <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel" id="cancel"></div></div>
+    </form>
+
+    <!--  formulaire pour l'upload drag and drop -->
         <form id="submitUpload" method="POST" enctype="multipart/form-data">
-        <?php echo '<input type="hidden" name="currentDirectory" id="directory" value="'.$_GET['dir'].'" readonly>'; ?>
-
-            <div id="drop_zone" class="alert alert-block alert-success pagination-centered">
-                <h1 style="text-align: center">Drop files here or click for select</h1>
-            </div>
-            <div>
-
-<!--                <input type="checkbox" id="hash_sha1" title="Check this to calculate SHA1 file hash" checked/>-->
-<!--                SHA1&nbsp;-->
-
-                <div style="float: right">
-                    <input type="file" id="files" name="files[]" multiple style="display: none"/>
-                </div>
-            </div>
-            <div id="list"></div>
-        <?php
+        <?php echo '<input type="hidden" name="currentDirectory" id="directory" value="'.$_GET['dir'].'" readonly>';
         echo '<div id="formUpload"><label name="chooseDestination">Select a destination: &nbsp</label>';
           echo '<select name="destination" id="destination">
                 <option>/</option>';
@@ -243,6 +267,7 @@ function cmp($a,$b)
                 $elementList = $elementManager->find(array(
                 'serverPath'=> new MongoRegex("/^/"),
                 'state' => 1,
+                'idOwner' => $userId,
                 '$or' => array(
                 array('idRefElement' => $idRefElementEmptyDirectory),
                 array('idRefElement' => $idRefElementNotEmptyDirectory)
@@ -271,8 +296,11 @@ function cmp($a,$b)
         <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel" id="cancel"></div>
         <div id="informationElementToUpload"></div>
     </form>
+
+
     <div id="results"></div>
 
 <?php
 }
 ?>
+
