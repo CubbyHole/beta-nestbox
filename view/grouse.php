@@ -1,5 +1,3 @@
-<title>Nestbox - File explorer</title>
-<link rel="shortcut icon" href="../content/img/logo/logoNestBox.png">
 <?php
 /**
  * Created by PhpStorm.
@@ -14,6 +12,8 @@ $projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Nestbox';
 require_once $projectRoot.'/required.php';
 
 ?>
+<title>Nestbox - File explorer</title>
+<link rel="shortcut icon" href="../content/img/logo/logoNestBox.png">
 <link rel=stylesheet type="text/css" href="../content/css/style.css">
 <link rel=stylesheet type="text/css" href="../content/bootstrap/css/bootstrap.css">
 <link rel=stylesheet type="text/css" href="../content/bootstrap/css/bootstrap-theme.css">
@@ -81,6 +81,7 @@ require_once $projectRoot.'/required.php';
 
                         <!-- formulaire pour déplacer -->
                         <form style="text-align: left" id="downloadLinkElement" method="POST">
+                            <input type="hidden" name="owner" id="owner" value="<?= $element->getOwner() ?>" read-only>
                             <input type="hidden" name="idElement" id="idElement" value="<?= $element->getId() ?>" read-only>
                             <input type="submit" class="btn-success btn" value="Download" name="downloadAnonymousElem" id="downloadAnonymousElem">
                         </form>
