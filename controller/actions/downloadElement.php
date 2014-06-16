@@ -12,7 +12,6 @@ require_once $projectRoot.'/required.php';
 
 if(isset($_POST['idElement']))
 {
-//    var_dump($_POST['idElement']);
   /**
    *  appel de la fonction download
    */

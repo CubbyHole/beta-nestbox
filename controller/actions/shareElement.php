@@ -22,5 +22,4 @@ if(isset($_POST['email']) && isset($_POST['refRight']) && isset($_POST['idElemen
     }
     else
         echo 'Right has been successfully applied for element and user with email '.$_POST['email'];
-    //shareWithUser($_POST['idElement'], $userId, $_POST['email'], $_POST['refRight']);
 }

@@ -159,15 +159,6 @@ function hoverFolder(folder)
     var elementId = folder.getAttribute("id");
     var elementName = folder.getAttribute("name");
 
-//    $("div[data-element-type='folder']").mouseenter(function() {
-//        $(this).css("background", "#EEE");
-//    }).mouseleave(function() {
-//        $(this).css("background", "white");
-//    });
-
-//    $("div[data-element-type='folder']").mouseenter(function() {
-//        $(this).css("background", "#EEE");
-//    });
 }
 
 

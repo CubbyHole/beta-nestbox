@@ -26,5 +26,4 @@ if(isset($_POST['directory']) && isset($_POST['nameNewFolder']))
     }
     else
         echo 'Your folder '.$_POST['nameNewFolder'].' has been successfully created.';
-//    //$elementManager->createNewFolder($_POST['nameNewFolder'], $_POST['currentDirectory']);
 }

@@ -59,7 +59,7 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     {
 ?>
 
-    <!-- formulaire pour déplacer -->
+    <!-- formulaire pour partager anonymement -->
     <form id="submitShareAnonymous" style="margin-top: 50px;text-align: center;" method="POST">
         <?php
         echo '<p><label name="createDownloadLink">Do you want to create a download link:</label></p>';

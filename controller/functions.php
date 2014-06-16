@@ -29,6 +29,8 @@ if(isset($_POST['downloadAnonymousElem']) && isset($_POST['idElement']))
     userDownload($_POST['owner'], $_POST['idElement']);
 }
 
+
+
 // soumission du formulaire d'upload basique
 if(isset($_POST['uploadBasicElem']) && isset($_FILES['fileExplorer']))
 {
@@ -74,6 +76,9 @@ if(isset($_POST['uploadBasicElem']) && isset($_FILES['fileExplorer']))
         echo "Error during upload.";
 }
 
+
+
+
 /**
  * @param $owner
  * @param $isOwner
@@ -117,7 +122,6 @@ function arborescence($owner, $isOwner, $dir)
         {
             foreach($elementList as $element)
             {
-                //$element->setRefElement($refElementManager->findById($element->getRefElement()));
                 $codeElement = $element->getRefElement()->getCode();
 
                 switch($codeElement)
@@ -162,9 +166,6 @@ function arborescence($owner, $isOwner, $dir)
                                     </div>
                                   </div>';
                             $x = "/".$element->getName()."/";
-                            //under_arborescence($owner, $isOwner, $x);
-                            /*if($_GET['dir'] != $x)
-                                under_arborescence($owner, $isOwner, $_GET['dir']);*/
                         }
                         else
                             echo '<div class="row" data-element-type="folder">
@@ -298,11 +299,6 @@ function contenu($owner,$isOwner,$dir, $sharedElements = false)
     echo '<div class="col-md-7 contenu">';
 
 
-//    echo ' <div class="row">
-//                  <span class="cell" style="width: 200px;">Name</span>
-//                  <span class="cell" style="width: 200px;">Size(Kb)</span>
-//                  <span class="cell" style="width: 200px;">Extension</span>
-//          </div>';
     echo '<table>';
     echo '<thead>';
     echo '<tr>';

@@ -199,7 +199,7 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     }
     ?>
 
-    <!-- formulaire pour renommer -->
+    <!-- formulaire pour partager -->
     <form id="submitShare" method="POST">
         <?php
         echo '<p><label name="newEmail">Enter an user email and select a right to share this element with him:</label></p>';
