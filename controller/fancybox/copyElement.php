@@ -116,9 +116,10 @@ function cmp($a,$b)
                     $result = array_unique($elementList);
 
                     usort($result, "cmp");
-                foreach($result as $element)
+                foreach($result as $elem)
                 {
-                    echo '<option>'.$element.'/</option>';
+                    if($elem != '/'.$element->getName())
+                        echo '<option>'.$elem.'/</option>';
                 }
         echo '</select>';
 
