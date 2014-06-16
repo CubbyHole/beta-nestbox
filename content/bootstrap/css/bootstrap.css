@@ -30,9 +30,6 @@ summary {
   display: block;
 }
 
-footer{
-    display: none;
-}
 audio,
 canvas,
 progress,
@@ -3725,7 +3722,7 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 }
 .navbar-fixed-top,
 .navbar-fixed-bottom {
-  position: fixed !important;
+  position: relative !important;
   right: 0;
   left: 0;
   z-index: 1030;

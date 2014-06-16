@@ -11,7 +11,7 @@ require_once $projectRoot.'/required.php';
 $path = 'C:/wamp/www/Nestbox/'.$userId.'/Tmp-'.$userId.'';
 /* Si l'utilisateur décide d'uploader un element */
 
-if(isset($_POST['destination']))
+if(isset($_POST['destination']) && isset($_SESSION['file']))
 {
 
     $returnMoveFS = moveFSElement($userId, '/Tmp-'.$userId.'/', $_SESSION['file']['name'], $_POST['destination'], $_SESSION['file']['name']);
@@ -46,6 +46,8 @@ if(isset($_POST['destination']))
         updateFolderStatus($_POST['destination'], $userId);
         echo "Your element has been successfully uploaded.";
     }
+
+    unset($_SESSION['file']);
 }
 else
         echo "Error during upload.";

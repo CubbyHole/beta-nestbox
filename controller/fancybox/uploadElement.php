@@ -21,7 +21,7 @@ require_once $projectRoot.'/required.php';
     <div class="contain">
         <div class="upload_form_cont">
             <div id="dropArea">Drop area</div>
-            <div class="info">
+            <div class="infos">
                 <div><input type="hidden" id="url" value="http://localhost/Nestbox/controller/actions/uploadElement.php"/></div>
                 <h2>File :</h2>
                 <div id="result"></div>
