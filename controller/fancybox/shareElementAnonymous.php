@@ -60,7 +60,7 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
 ?>
 
     <!-- formulaire pour déplacer -->
-    <form id="submitShareAnonymous" method="POST">
+    <form id="submitShareAnonymous" style="margin-top: 50px;text-align: center;" method="POST">
         <?php
         echo '<p><label name="createDownloadLink">Do you want to create a download link:</label></p>';
         echo '<input type="hidden" name="idElement" id="idElement" value="'.$_GET['id'].'" read-only>';
@@ -73,9 +73,10 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
     }
     else
     {
-        echo '<div id="downloadLink">';
+        echo '<div id="downloadLink"  style="margin-top: 50px;text-align: center;">';
             echo 'This element already has a download link. Copy the following link to your friend to give them possibility to download this element';
-            echo 'http://localhost/Nestbox/view/gouze.php?token='.$element->getDownloadLink();
+            echo '<br />';
+            echo '<font color="green">http://localhost/Nestbox/view/grouse.php?token='.$element->getDownloadLink().'<font>';
         echo '</div>';
     }
 ?>
