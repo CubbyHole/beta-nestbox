@@ -6,7 +6,6 @@
 function clickable (div)
 {
     page = div.getAttribute("data-tree");
-    console.log(page);
     $.ajax({
         url: "../.."+page,
         cache:false,
@@ -32,8 +31,6 @@ function selectFile(file){
     var elementId = file.getAttribute("id");
     var elementName = encodeURI(file.getAttribute("name"));
     var elementRight = file.getAttribute("class");
-
-    console.log(file);
 
     $("tr[data-element-type='file']").css({
         'backgroundColor':'transparent'
@@ -87,6 +84,7 @@ function selectFile(file){
     }
     $("#infoElement").append(infoAction);
 
+
 }
 
 function hoverFile(file)
@@ -108,8 +106,6 @@ function selectFolder(folder){
     var elementName = folder.getAttribute("name");
     var elementRight = folder.getAttribute("class");
 
-//    var elementName = elementName.replace(/ /g,"");
-//    console.log(elementName);
 
     $("tr[data-element-type='file']").css({
         'backgroundColor':'transparent'
