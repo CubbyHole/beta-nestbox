@@ -367,9 +367,6 @@ function contenu($owner,$isOwner,$dir, $sharedElements = false)
     }
     else
     {
-        $refElementManager = new RefElementPdoManager();
-
-
         $elementList = $elementManager->returnElementsDetails($owner, $isOwner, $dir);
 
         if(is_array($elementList) && array_key_exists('error', $elementList))
@@ -428,48 +425,11 @@ function contenu($owner,$isOwner,$dir, $sharedElements = false)
                 }
             }
         }
-
-        echo '</tbody>';
-        echo '</table>';
-        echo '</div>';
     }
+    echo '</tbody>';
+    echo '</table>';
+    echo '</div>';
 }
-
-//function under_arborescence($owner, $isOwner, $dir)
-//{
-//    $elementManager = new ElementPdoManager();
-//    $refElementManager = new RefElementPdoManager();
-//
-//    //$criteria = array("idOwner" => $owner, "state" => (int)$state, "serverPath" => $dir);
-////    $elementList = $elementManager->find($criteria);
-////                    var_dump($elementList);
-//    $elementList = $elementManager->returnElementsDetails($owner, $isOwner, $dir);
-//
-//    foreach($elementList as $element)
-//    {
-//        //$element->setRefElement($refElementManager->findById($element->getRefElement()));
-//        $codeElement = $element->getRefElement()->getCode();
-//        //var_dump($codeElement);
-//        switch($codeElement)
-//        {
-//            case 4002:
-//                echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_close.png" width="18px" height="18px" style="margin-left:30px;"/><a href="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">'.$element->getName().'</a></span></div></div>';
-//                break;
-//            case 4003:
-////                echo $element->getName();
-////                echo $_GET['dir'];
-////                echo $dir;
-//                if(isset ($_GET['dir']) && (preg_match('#'.$element->getName().'/#', '#'.$_GET['dir'].'/#')))
-//                {
-//                    echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_open.png" width="18px" height="18px" style="margin-left:30px;"/><a href="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">'.$element->getName().'</a></span></div></div>';
-//                    under_arborescence($owner, $isOwner, $_GET['dir']);
-//                }
-//                else
-//                    echo '<div class="row"><div id="arbo"><span class="cell"><img src="content/img/icon_dir_close.png" width="18px" height="18px" style="margin-left:30px;"/><a href="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">'.$element->getName().'</a></span></div></div>';
-//                break;
-//        }
-//    };
-//}
 
 
 // retourne la taille du fichier

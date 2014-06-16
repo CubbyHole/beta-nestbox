@@ -75,12 +75,6 @@ $projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Nestbox';
                     </form>
                 </div>
 
-                <div class="col-md-12 dosnt">
-                    <input id="ident" value="Id" type="submit">
-                    <input id="pass" value="Pass" type="submit">
-                    <input id="newPass" value="newPass" type="submit">
-                </div>
-
                 <div class="col-md-12 proof">
                     <div class="col-md-6 remember">
 
@@ -108,24 +102,4 @@ $projectRoot = $_SERVER['DOCUMENT_ROOT'].'/Nestbox';
         <?php endif; ?>
     </div>
 <script src="../content/js/jquery.js"></script>
-<script>
-    $(function () {
-        $( "#ident" ).click(function() {
 
-            $('#email').val('harry.bellod@gmail.com');
-            $('#password').val('Azertyuiop@123');
-
-        });
-
-        $( "#pass" ).click(function() {
-
-            $('#password').val('Azertyuiop@123');
-
-        });
-
-        $( "#newPass" ).click(function() {
-            $('#password').val('Wxcvbnjklm@123');
-
-        });
-    });
-</script>
