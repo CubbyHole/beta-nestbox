@@ -53,7 +53,7 @@ if( isset($_POST['var']) && !empty($_POST['var']) )
         <p><label name="enterAName">Enter a name for the new folder: </label></p>
         <input type="text" name="nameNewFolder" id="nameNewFolder" placeholder="Folder name">
         <br /><br />
-        <input type="button" onclick="createFolder();" class="btn-success btn" value="Create new" name="createNewFolder" id="createNewFolder">
+        <input type="button" onclick="createFolder();" class="btn-success btn" value="Create new folder" name="createNewFolder" id="createNewFolder">
         <input type="button" class="btn-danger btn" onclick="parent.jQuery.fancybox.close();" value="Cancel" name="cancel" id="cancel">
     </form>
     <div id="results"></div>

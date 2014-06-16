@@ -33,10 +33,12 @@ function selectFile(file){
     var elementName = encodeURI(file.getAttribute("name"));
     var elementRight = file.getAttribute("class");
 
-    $("div[data-element-type='file']").css({
+    console.log(file);
+
+    $("tr[data-element-type='file']").css({
         'backgroundColor':'transparent'
     });
-    $("div[data-element-type='folder']").css({
+    $("tr[data-element-type='folder']").css({
         'backgroundColor':'transparent'
     });
     $("#".concat(elementId)).css({
@@ -93,7 +95,7 @@ function hoverFile(file)
     var elementName = file.getAttribute("name");
     var elementRight = file.getAttribute("class");
 
-    $("div[data-element-type='file']").mouseenter(function() {
+    $("tr[data-element-type='file']").mouseenter(function() {
         $(this).css("background", "#EEE");
     }).mouseleave(function() {
         $(this).css("background", "white");
@@ -109,10 +111,10 @@ function selectFolder(folder){
 //    var elementName = elementName.replace(/ /g,"");
 //    console.log(elementName);
 
-    $("div[data-element-type='file']").css({
+    $("tr[data-element-type='file']").css({
         'backgroundColor':'transparent'
     });
-    $("div[data-element-type='folder']").css({
+    $("tr[data-element-type='folder']").css({
         'backgroundColor':'transparent'
     });
 

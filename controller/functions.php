@@ -9,44 +9,6 @@ require_once $projectRoot.'/required.php';
  * Time: 10:18
  */
 
-//// delete d'un fichier
-//if(isset($_GET['delete']))
-//{
-//    unlink(utf8_decode($_GET['delete']));                                 /** Plus valable vu qu'on ne supprimer plus sur le serveur de fichier */
-//}
-//
-
-//// delete d'un dossier
-//if(isset($_GET['delete_folder']))
-//{                                                                         /** Plus valable mais il faut penser que si l'user supprime un dossier, passer tout son contenu à state = 0 ? */
-//    RepEfface(utf8_decode($_GET['delete_folder']));
-//}
-//
-
-//// download
-//if(isset($_GET['filepath']))
-//{
-//    download($_GET['filepath'], $_GET['filename']);
-//}
-//
-
-/** En récupérant les informations de l'élément la fonction download sur le serveur de fichier devrais marcher */
-//function download($filepath, $filename){
-//    if(file_exists($filepath) )
-//    {
-//        $fsize = filesize($filepath);
-//
-//        header('Content-Disposition: attachment; filename="'.basename($filepath).'"');
-//        header('Content-type: application/x-download');
-//        header('Content-Length: '.fsize);
-//        readfile($filepath);
-//        exit;
-//
-//    }
-//}
-//
-
-//$elementManager = new ElementPdoManager();
 
 if(isset($_SESSION['user']))
 {
@@ -64,7 +26,52 @@ if(isset($_POST['downloadElem']) && isset($_POST['idElement']))
 // soumission du formulaire de download anonyme
 if(isset($_POST['downloadAnonymousElem']) && isset($_POST['idElement']))
 {
-    userDownload($userId, $_POST['idElement']);
+    userDownload($_POST['owner'], $_POST['idElement']);
+}
+
+// soumission du formulaire d'upload basique
+if(isset($_POST['uploadBasicElem']) && isset($_FILES['fileExplorer']))
+{
+    $path = 'C:/wamp/www/Nestbox/'.$userId.'/Tmp-'.$userId.'';
+    $folder = $path.'/';
+    $file = $_FILES['fileExplorer']['name'];
+    move_uploaded_file($_FILES['fileExplorer']['tmp_name'], $folder.$file);
+
+    $returnMoveFS = moveFSElement($userId, '/Tmp-'.$userId.'/', $_FILES['fileExplorer']['name'], $_POST['destination'], $_FILES['fileExplorer']['name']);
+    if($returnMoveFS == TRUE)
+    {
+        $newPath = $projectRoot.'/'.$userId.$_POST['destination'];
+        $elementManager = new ElementPdoManager();
+        $refElementManager = new RefElementPdoManager();
+
+        $hash = sha1_file($newPath.$_FILES['fileExplorer']['name']);
+        $size = fileSize64($newPath.$_FILES['fileExplorer']['name']);
+        $pathInfo = pathinfo($newPath.$_FILES['fileExplorer']['name']);
+        $refElement = $refElementManager->findOne(array('extension' => '.'.$pathInfo['extension']));
+
+        if(is_array($refElement) && array_key_exists('error', $refElement))
+            echo "Extension not found";
+        else
+        {
+            $idRefElement = $refElement->getId();
+            $criteria = array(
+                'downloadLink' => '',
+                'idOwner' => $userId,
+                'idRefElement' => $idRefElement,
+                'name' => $pathInfo['filename'],
+                'state' => 1,
+                'hash' => $hash,
+                'serverPath' => $_POST['destination'],
+                'size' => $size
+            );
+
+            $createElement = $elementManager->create($criteria);
+            updateFolderStatus($_POST['destination'], $userId);
+            header('Location : '.$_SERVER['PHP_SELF'].'');
+        }
+    }
+    else
+        echo "Error during upload.";
 }
 
 /**
@@ -288,17 +295,24 @@ function arborescence($owner, $isOwner, $dir)
 function contenu($owner,$isOwner,$dir, $sharedElements = false)
 {
     echo "<!-- Contenu -->";
-    echo '<div class="col-md-3 contenu">';
+    echo '<div class="col-md-7 contenu">';
 
 
-    echo ' <div class="row">
-                  <span class="cell" style="width: 200px;">tasoeur</span>
-                  <span class="cell" style="width: 200px;">tasoeur KB</span>
-                  <span class="cell" style="width: 200px;">tasoeur</span>
-          </div>';
-
+//    echo ' <div class="row">
+//                  <span class="cell" style="width: 200px;">Name</span>
+//                  <span class="cell" style="width: 200px;">Size(Kb)</span>
+//                  <span class="cell" style="width: 200px;">Extension</span>
+//          </div>';
+    echo '<table>';
+    echo '<thead>';
+    echo '<tr>';
+    echo '<th class="infoTitle" style="width:400px;">Name</th>';
+    echo '<th class="infoTitle" style="width:400px;">Size(Kb)</th>';
+    echo '<th class="infoTitle" style="width:400px;">Extension</th>';
+    echo '</tr>';
+    echo '</thead>';
+    echo '<tbody>';
     $elementManager = new ElementPdoManager();
-
     if($sharedElements == true)
     {
         $options = array('returnUserInfo' => true, 'returnRefElementInfo' => true, 'returnRightInfo' => true, 'returnRefRightInfo' => true);
@@ -309,64 +323,46 @@ function contenu($owner,$isOwner,$dir, $sharedElements = false)
          * ['right']['idRefRight'] => infos du refRight du droit
          *
          */
+
         $sharedElementList = $elementManager->findSharedElements($owner, $dir, $options);
         if(is_array($sharedElementList) && array_key_exists('error', $sharedElementList))
         {
-            echo '<div class="row"><span class="cell">No elements shared with you</span></div>';
+            echo '<td><span class="cell">No elements shared with you</span></td>';
         }
         else
         {
+
             foreach($sharedElementList as $sharedElement)
             {
+                $extensionSharedElement = str_replace('.','',$sharedElement['idRefElement']['extension']);
                 $codeRightElement = $sharedElement['right']['idRefRight']['code'];
                 $codeElement = $sharedElement['idRefElement']['code'];
-//                var_dump($sharedElement['_id']);
-//                var_dump($sharedElement);
                 switch($codeElement)
                 {
-                    case 4002:
 
-                            echo '<div  onclick="selectFolder(this)" id="'.$sharedElement['_id'].'" data-element-type="folder" name="'.$sharedElement['name'].'" class="'.$codeRightElement.'">
-                                        <div class="row">
-                                            <div id="arbo">
-                                                <span class="cell">
-                                                    <img src="'.$sharedElement['idRefElement']['imagePath'].'" width="18px" height="18px" />
-                                                    <span class="nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?shared='.$_GET['shared'].$sharedElement['name'].'/">
-                                                        '.$sharedElement['name'].'
-                                                    </span>
-                                                </span>
-                                            </div>
-                                        </div>
-                                     </div>';
+                    case 4002:
+                        echo '<tr onclick="selectFolder(this)" id="'.$sharedElement['_id'].'" data-element-type="folder" name="'.$sharedElement['name'].'" class="'.$codeRightElement.'">
+                                <td ><span class="cell nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?shared='.$_GET['shared'].$sharedElement['name'].'/"><img src="'.$sharedElement['idRefElement']['imagePath'].'" width="18px" height="18px" />'.$sharedElement['name'].'</span></td>
+                                <td ></td>
+                                <td ></td>
+                               </tr>';
                         break;
                     case 4003:
-
-                            echo '<div  onclick="selectFolder(this)" id="'.$sharedElement['_id'].'" data-element-type="folder" name="'.$sharedElement['name'].'" class="'.$codeRightElement.'">
-                                        <div class="row">
-                                            <div id="arbo">
-                                                <span class="cell">
-                                                    <img src="'.$sharedElement['idRefElement']['imagePath'].'" width="18px" height="18px" />
-                                                    <span class="nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?shared='.$_GET['shared'].$sharedElement['name'].'/">
-                                                    '.$sharedElement['name'].'
-                                                    </span>
-                                                </span>
-                                            </div>
-                                        </div>
-                                      </div>';
+                        echo '<tr onclick="selectFolder(this)" id="'.$sharedElement['_id'].'" data-element-type="folder" name="'.$sharedElement['name'].'" class="'.$codeRightElement.'">
+                                <td ><span class="cell nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?shared='.$_GET['shared'].$sharedElement['name'].'/"><img src="'.$sharedElement['idRefElement']['imagePath'].'" width="18px" height="18px" />'.$sharedElement['name'].'</span></td>
+                                <td ></td>
+                                <td ></td>
+                               </tr>';
                         break;
                     default:
-                        echo '<div  onclick="selectFile(this)" id="'.$sharedElement['_id'].'" data-element-type="file" name="'.$sharedElement['name'].'" class="'.$codeRightElement.'">
-                                    <div class="row">
-                                        <div id="arbo">
-                                            <span class="cell">
-                                                <img src="'.$sharedElement['idRefElement']['imagePath'].'" width="18px" height="18px" />
-                                                '.$sharedElement['name'].'
-                                            </span>
-                                        </div>
-                                    </div>
-                                  </div>';
+                        echo '<tr onclick="selectFile(this)" id="'.$sharedElement['_id'].'" data-element-type="file" name="'.$sharedElement['name'].'" class="'.$codeRightElement.'">
+                                <td ><span class="cell" ><img src="'.$sharedElement['idRefElement']['imagePath'].'" width="18px" height="18px" />'.$sharedElement['name'].'</span></td>
+                                <td ><span class="cell" >'.$sharedElement['size'].' KB</span></td>
+                                <td ><span class="cell" >'.$extensionSharedElement.'</span></td>
+                               </tr>';
                 }
-            };
+            }
+
         }
     }
     else
@@ -378,10 +374,11 @@ function contenu($owner,$isOwner,$dir, $sharedElements = false)
 
         if(is_array($elementList) && array_key_exists('error', $elementList))
         {
-            echo '<div class="row"><span class="cell">Empty folder</span></div>';
+            echo '<td><span class="cell">Empty folder</span></td>';
         }
         else
         {
+
             foreach($elementList as $element)
             {
                 $extensionElement = str_replace('.','',$element->getRefElement()->getExtension());
@@ -391,74 +388,49 @@ function contenu($owner,$isOwner,$dir, $sharedElements = false)
                 {
                     case 4002:
                         if(isset($_GET['dir']))
-                            echo '<div  onclick="selectFolder(this)" id="'.$element->getId().'" data-element-type="folder" name="'.$element->getName().'">
-                                    <div class="row">
-                                        <div id="arbo">
-                                            <span class="cell">
-                                                <img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />
-                                                <span class="nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">
-                                                    '.$element->getName().'
-                                                </span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                 </div>';
+                            echo '<tr onclick="selectFolder(this)" id="'.$element->getId().'" data-element-type="folder" name="'.$element->getName().'>
+                                     <td ><span class="cell"></span></td>
+                                     <td ><span class="cell nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/"><img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />'.$element->getName().'</span></td>
+                                     <td></td>
+                                     <td></td>
+                                 </tr>';
                         else
-                            echo '<div  onclick="selectFolder(this)" id="'.$element->getId().'" data-element-type="folder" name="'.$element->getName().'">
-                                    <div class="row">
-                                        <div id="arbo">
-                                            <span class="cell">
-                                                <img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />
-                                                <span class="nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/">
-                                                '.$element->getName().'
-                                                </span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                  </div>';
+                            echo '<tr onclick="selectFolder(this)" id="'.$element->getId().'" data-element-type="folder" name="'.$element->getName().'>
+                                     <td ><span class="cell"></span></td>
+                                     <td ><span class="cell nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/"><img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />'.$element->getName().'</span></td>
+                                     <td></td>
+                                     <td></td>
+                                 </tr>';
                         break;
                     case 4003:
                         if(isset($_GET['dir']))
-                            echo '<div  onclick="selectFolder(this)" id="'.$element->getId().'" data-element-type="folder" name="'.$element->getName().'">
-                                    <div class="row">
-                                        <div id="arbo">
-                                            <span class="cell">
-                                                <img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />
-                                                <span class="nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/">
-                                                '.$element->getName().'
-                                                </span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                  </div>';
+                            echo '<tr onclick="selectFolder(this)" id="'.$element->getId().'" data-element-type="folder" name="'.$element->getName().'>
+                                     <td ><span class="cell"></span></td>
+                                     <td ><span class="cell nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir='.$_GET['dir'].$element->getName().'/"><img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />'.$element->getName().'</span></td>
+                                     <td></td>
+                                     <td></td>
+                                 </tr>';
                         else
-                            echo '<div  onclick="selectFolder(this)" id="'.$element->getId().'" data-element-type="folder" name="'.$element->getName().'">
-                                    <div class="row">
-                                        <div id="arbo">
-                                            <span class="cell">
-                                                <img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />
-                                                <span class="nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/">
-                                                '.$element->getName().'
-                                                </span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                  </div>';
+                            echo '<tr onclick="selectFolder(this)" id="'.$element->getId().'" data-element-type="folder" name="'.$element->getName().'>
+                                     <td ><span class="cell"></span></td>
+                                     <td ><span class="cell nameElement" onclick="clickable(this)" data-tree="'.$_SERVER['PHP_SELF'].'?dir=/'.$element->getName().'/"><img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />'.$element->getName().'</span></td>
+                                     <td></td>
+                                     <td></td>
+                                 </tr>';
                         break;
                     default:
-                        echo '<div onclick="selectFile(this)" id="'.$element->getId().'" data-element-type="file" name="'.$element->getName().'">
-                                <div class="row">
-                                    <div id="arbo">
-                                        <span class="cell"><img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" /></span>
-                                        <span class="cell" style="width:400px;">'.$element->getName().'</span>
-                                        <span class="cell" style="width:400px;">'.$element->getSize().' KB</span>
-                                        <span class="cell" style="width:400px;">'.$extensionElement.'</span>
-                                </div>
-                                </div>
-                               </div>';
+                        echo '<tr onclick="selectFile(this)" id="'.$element->getId().'" data-element-type="file" name="'.$element->getName().'>
+                                <td ><span class="cell"></span></td>
+                                <td ><span class="cell" ><img src="'.$element->getRefElement()->getImagePath().'" width="18px" height="18px" />'.$element->getName().'</span></td>
+                                <td ><span class="cell" >'.$element->getSize().' KB</span></td>
+                                <td ><span class="cell" >'.$extensionElement.'</span></td>
+                               </tr>';
                 }
-            };
+            }
         }
+
+        echo '</tbody>';
+        echo '</table>';
         echo '</div>';
     }
 }
@@ -570,29 +542,29 @@ function fileSize64($file)
 
 function convertKilobytes($kiloBytes, $outputUnit = NULL, $format = NULL)
 {
-$bytes = $kiloBytes * 1024; //transforme en bytes
+    $bytes = $kiloBytes * 1024; //transforme en bytes
 
 // Format string
-$format = ($format === NULL) ? '%01.2f' : (string) $format;
+    $format = ($format === NULL) ? '%01.2f' : (string) $format;
 
-$units = array('B', 'KB', 'MB', 'GB', 'TB', 'PB');
-$mod = 1024;
+    $units = array('B', 'KB', 'MB', 'GB', 'TB', 'PB');
+    $mod = 1024;
 
-/*
- * Déterminer l'unité à utiliser
- * http://php.net/manual/en/function.array-search.php
- */
-if (($power = array_search((string) $outputUnit, $units)) === FALSE)
-{
-    //http://php.net/manual/en/function.floor.php
-    $power = ($bytes > 0) ? floor(log($bytes, $mod)) : 0;
-}
+    /*
+     * Déterminer l'unité à utiliser
+     * http://php.net/manual/en/function.array-search.php
+     */
+    if (($power = array_search((string) $outputUnit, $units)) === FALSE)
+    {
+        //http://php.net/manual/en/function.floor.php
+        $power = ($bytes > 0) ? floor(log($bytes, $mod)) : 0;
+    }
 
-/*
- * http://php.net/manual/en/function.sprintf.php
- * http://php.net/manual/en/function.pow.php
- */
-return sprintf($format, $bytes / pow($mod, $power), $units[$power]);
+    /*
+     * http://php.net/manual/en/function.sprintf.php
+     * http://php.net/manual/en/function.pow.php
+     */
+    return sprintf($format, $bytes / pow($mod, $power), $units[$power]);
 }
 
 /**
@@ -720,5 +692,5 @@ function checkRightOnCurrentDirectory($serverPath, $idUser)
         else
             return true;
     }
- }
+}
 ?>
