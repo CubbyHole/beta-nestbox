@@ -1,6 +1,6 @@
 /***/
 /*{*/
-    /*font-size: 10pt;*/
+/*font-size: 10pt;*/
 /*}*/
 
 a{
@@ -141,16 +141,16 @@ li
     font-size: 20px;
 }
 .contenu div[data-element-type='file']{
-    width: 300%;
+    /*width: 300%;*/
 }
 .contenu div[data-element-type='folder']{
-    width: 300%;
+    /*width: 300%;*/
 }
-div[data-element-type='file']:hover{
+tr[data-element-type='file']:hover{
     background: #EEE!important;
     cursor : pointer;
 }
-div[data-element-type='folder']:hover{
+tr[data-element-type='folder']:hover{
     background: #EEE!important;
     cursor : pointer;
 }
@@ -493,7 +493,7 @@ and (max-width : 1024px)
 .contain {
     overflow:hidden;
     max-width:500px;
-    margin:20px ;
+    margin:auto ;
 }
 
 .upload_form_cont {
